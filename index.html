@@ -248,4 +248,110 @@
         { id: 8, name: "پیتزا پێپەڕۆنی", price: 4000, category: "pizza", img: "https://i.postimg.cc/JzyVqDsk/20251231-232834-0000.jpg" },
         { id: 9, name: "بووم پیزا (شاهانە)", price: 7000, category: "pizza", img: "https://i.postimg.cc/L69mz8k6/20251231-232908-0000.jpg" },
         { id: 10, name: "بووم بەرگر", price: 6000, category: "burger", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=500" },
-        { id: 11, name: "چیز بەرگر", price: 3000, category: "burger", img: "
+        { id: 11, name: "چیز بەرگر", price: 3000, category: "burger", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
+        { id: 14, name: "لەفەی شاوەرمە", price: 1500, category: "shawarma", img: "https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg" },
+        { id: 17, name: "فینگەر (پەتاتە)", price: 1500, category: "finger", img: "https://i.postimg.cc/gcKM6zk8/french-fries-300x221.png" },
+        { id: 18, name: "کۆکا کۆلا", price: 500, category: "drink", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500" }
+    ];
+
+    let cart = [];
+    const folderNames = { 'pizza': '🍕 جۆرەکانی پیزا', 'burger': '🍔 جۆرەکانی بەرگر', 'shawarma': '🌯 جۆرەکانی شاوەرمە', 'finger': '🍟 فینگەر', 'drink': '🥤 خواردنەوەکان' };
+
+    function playSound(type) {
+        const sound = document.getElementById(type === 'add' ? 'orderSound' : 'successSound');
+        if(sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
+    }
+
+    function searchMenu() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        const filtered = menuItems.filter(i => i.name.toLowerCase().includes(q));
+        renderDisplay(filtered);
+    }
+
+    function openFolder(category, element) {
+        document.querySelectorAll('.cat-card').forEach(card => card.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('folder-title').innerText = folderNames[category];
+        const filtered = menuItems.filter(item => item.category === category);
+        renderDisplay(filtered);
+    }
+
+    function renderDisplay(items) {
+        const display = document.getElementById('menu-display');
+        display.innerHTML = '';
+        items.forEach(item => {
+            display.innerHTML += `
+                <div class="item-card">
+                    <img src="${item.img}">
+                    <div class="item-info"><h3>${item.name}</h3><div class="price">${item.price.toLocaleString()}د</div></div>
+                    <button class="add-btn" onclick="addToCart(${item.id})">زیادکردن +</button>
+                </div>`;
+        });
+    }
+
+    function addToCart(id) {
+        const item = menuItems.find(i => i.id === id);
+        cart.push(item);
+        playSound('add');
+        renderCart();
+    }
+
+    function renderCart() {
+        const cartDiv = document.getElementById('cart-items');
+        let total = 0; cartDiv.innerHTML = '';
+        const counts = {};
+        cart.forEach(i => { total += i.price; counts[i.name] = (counts[i.name] || 0) + 1; });
+        
+        Object.keys(counts).forEach(name => {
+            cartDiv.innerHTML += `<div class="cart-item"><span>${counts[name]}x ${name}</span><button class="remove-btn" onclick="removeFromCart('${name}')">لادان</button></div>`;
+        });
+
+        const finalTotal = total > 0 ? total + 2000 : 0;
+        document.getElementById('total-amount').innerText = finalTotal.toLocaleString();
+    }
+
+    function removeFromCart(name) {
+        const idx = cart.findIndex(i => i.name === name);
+        if(idx > -1) cart.splice(idx, 1);
+        renderCart();
+    }
+
+    function shareApp() {
+        if(navigator.share) navigator.share({ title: "Boom's Pizza", url: window.location.href });
+    }
+
+    window.onload = () => openFolder('pizza', document.querySelector('.cat-card'));
+
+    function sendToWhatsApp() {
+        if(cart.length === 0) return alert("سەبەتەکە خاڵییە!");
+        playSound('success');
+        
+        navigator.geolocation.getCurrentPosition(p => {
+            finalize(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`);
+        }, () => finalize(prompt("تکایە ناونیشان بنووسە:")));
+    }
+
+    function finalize(loc) {
+        const orderID = Math.floor(1000 + Math.random() * 9000);
+        const now = new Date();
+        const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+        
+        let receipt = `🧾 *وەسڵی داواکاری: #${orderID}*\n`;
+        receipt += `⏰ کات: ${timeStr}\n`;
+        receipt += `--------------------------\n`;
+        
+        const counts = {}; cart.forEach(i => counts[i.name] = (counts[i.name] || 0) + 1);
+        for(let n in counts) {
+            receipt += `🔹 ${counts[n]}x ${n}\n`;
+        }
+        
+        receipt += `--------------------------\n`;
+        receipt += `🛵 گەیاندن: ٢,٠٠٠ د.ع\n`;
+        receipt += `💰 *کۆی گشتی: ${document.getElementById('total-amount').innerText} دینار*\n\n`;
+        receipt += `📍 ناونیشان: ${loc}`;
+        
+        window.location.href = `https://wa.me/9647861995417?text=${encodeURIComponent(receipt)}`;
+    }
+</script>
+</body>
+</html>

@@ -39,7 +39,6 @@
             padding-right: 15px;
             margin-top: 40px;
             color: #111;
-            font-size: 1.5rem;
         }
         .menu-section {
             display: grid;
@@ -53,9 +52,8 @@
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 6px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
+            transition: 0.3s;
         }
-        .item-card:hover { transform: translateY(-8px); }
         .item-card img {
             width: 100%;
             height: 150px;
@@ -63,8 +61,7 @@
             border-radius: 15px;
             margin-bottom: 12px;
         }
-        .item-card h3 { margin: 10px 0 5px; font-size: 1.2rem; color: #222; }
-        .item-card p { color: var(--primary-red); font-weight: bold; margin: 5px 0; font-size: 1.1rem; }
+        .item-card h3 { margin: 10px 0 5px; font-size: 1.1rem; }
         .add-btn {
             background: var(--primary-red);
             color: white;
@@ -75,16 +72,13 @@
             width: 100%;
             font-weight: bold;
             font-family: 'Vazirmatn';
-            font-size: 1rem;
         }
-        /* Cart Styles */
         #cart-section {
             background: white;
             padding: 30px;
             border-radius: 25px;
             margin-top: 50px;
             border: 2px solid #eee;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
         .cart-item {
             display: flex;
@@ -100,13 +94,11 @@
             padding: 5px 12px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
         }
         .total-price {
             font-size: 1.6rem;
             font-weight: bold;
             margin: 30px 0;
-            text-align: left;
             color: var(--primary-red);
         }
         .whatsapp-btn {
@@ -119,17 +111,15 @@
             border-radius: 15px;
             font-weight: bold;
             font-size: 1.3rem;
-            transition: 0.3s;
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
         }
-        .whatsapp-btn:hover { background: #1ebe57; transform: scale(1.02); }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Boom's Pizza - بوم پیتزا</h1>
-    <p>باشترین کوالێتی و خێراترین گەیاندن</p>
+    <p>خواردنەکەت بە گەرمی دەگاتە دەستت!</p>
 </header>
 
 <div class="container">
@@ -139,32 +129,26 @@
     <h2>🍔 بەرگرەکان</h2>
     <div class="menu-section" id="burger-menu"></div>
 
-    <h2>🥤 میانو و خواردنەوەکان</h2>
+    <h2>🥤 خواردنەوەکان</h2>
     <div class="menu-section" id="other-menu"></div>
 
     <div id="cart-section">
-        <h3 style="font-size: 1.6rem; margin-top: 0;">🛒 سەبەتەی کڕین</h3>
+        <h3>🛒 سەبەتەکەت</h3>
         <div id="cart-items">
-            <p style="text-align: center; color: #999; padding: 20px;">سەبەتەکەت ئێستا خاڵییە</p>
+            <p style="text-align: center; color: #999;">سەبەتەکەت خاڵییە</p>
         </div>
         <div class="total-price">کۆی گشتی: <span id="total-amount">0</span> IQD</div>
-        <a href="#" class="whatsapp-btn" onclick="sendToWhatsApp()">تەواوکردنی داواکاری و ناردن</a>
+        <button class="whatsapp-btn" style="width: 100%; border: none; cursor: pointer;" onclick="sendToWhatsApp()">ناردنی داواکاری و لۆکەیشن</button>
     </div>
 </div>
 
 <script>
-    // لێرەدا دەتوانیت لینکی وێنەکان بگۆڕیت بۆ وێنەی خۆت
     const menuItems = [
         { id: 1, name: "پیتزا گۆشت ٢٥سم", price: 4000, category: "pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
         { id: 2, name: "پیتزا گۆشت ٢٨سم", price: 5000, category: "pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
-        { id: 3, name: "پیتزا گۆشت ٣٠سم", price: 7000, category: "pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
         { id: 4, name: "پیتزا پەنیرونی ٢٨سم", price: 4000, category: "pizza", img: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400" },
-        { id: 5, name: "پیتزا مریشک ٢٨سم", price: 5000, category: "pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400" },
         { id: 6, name: "بۆوم بەرگر", price: 6000, category: "burger", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
         { id: 7, name: "چیزبەرگر", price: 3000, category: "burger", img: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=400" },
-        { id: 8, name: "قارچک بەرگر", price: 5000, category: "burger", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400" },
-        { id: 9, name: "شاوەرمە مریشک", price: 1500, category: "other", img: "https://images.unsplash.com/photo-1633384566002-89355ea29f5d?w=400" },
-        { id: 10, name: "فنگر", price: 1500, category: "other", img: "https://images.unsplash.com/photo-1630384066242-17a17833c147?w=400" },
         { id: 11, name: "خواردنەوە گازییەکان", price: 500, category: "other", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400" }
     ];
 
@@ -200,54 +184,51 @@
         const cartDiv = document.getElementById('cart-items');
         const totalDiv = document.getElementById('total-amount');
         cartDiv.innerHTML = '';
-        
         let total = 0;
         cart.forEach((item, index) => {
             total += item.price;
             cartDiv.innerHTML += `
                 <div class="cart-item">
                     <span>${item.name}</span>
-                    <div>
-                        <span style="margin-left:15px; font-weight:bold;">${item.price.toLocaleString()} IQD</span>
-                        <button class="remove-btn" onclick="removeFromCart(${index})">لادان</button>
-                    </div>
-                </div>
-            `;
+                    <button class="remove-btn" onclick="removeFromCart(${index})">لادان</button>
+                </div>`;
         });
-
-        if(cart.length === 0) cartDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">سەبەتەکەت ئێستا خاڵییە</p>';
+        if(cart.length === 0) cartDiv.innerHTML = '<p style="text-align: center; color: #999;">سەبەتەکەت خاڵییە</p>';
         totalDiv.innerText = total.toLocaleString();
     }
 
     function sendToWhatsApp() {
         if(cart.length === 0) {
-            alert("تکایە سەرەتا خواردنێک هەڵبژێرە!");
+            alert("تکایە خواردنێک هەڵبژێرە!");
             return;
         }
 
-        let userLocation = prompt("تکایە ناونیشانی خۆت یان گەڕەکەکەت بنووسە:");
-        if (userLocation == null || userLocation == "") {
-            alert("پێویستە ناونیشان بنووسیت بۆ گەیاندن!");
-            return;
+        if (navigator.geolocation) {
+            alert("تکایە 'Allow' یان 'ڕێپێدان' بکە بۆ ئەوەی لۆکەیشنەکەت بە وردی بنێرین بۆ گەیاندن.");
+            navigator.geolocation.getCurrentPosition(function(position) {
+                let lat = position.coords.latitude;
+                let lon = position.coords.longitude;
+                let mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                finalizeOrder(mapUrl);
+            }, function() {
+                alert("نەتوانرا لۆکەیشن وەرگیرێت. تکایە ناونیشانەکەت بە نووسین بنووسە.");
+                let manualPos = prompt("ناونیشانی ماڵەکەت بنووسە:");
+                finalizeOrder(manualPos);
+            });
+        } else {
+            let manualPos = prompt("ناونیشانی ماڵەکەت بنووسە:");
+            finalizeOrder(manualPos);
         }
+    }
+
+    function finalizeOrder(locationInfo) {
+        let phoneNumber = "9647504629237"; // ژمارەی خۆت لێرە دابنێ
+        let message = "🍕 *داواکاری نوێ لە بوم پیتزا*\n\n";
+        cart.forEach((item, i) => message += `${i+1}- ${item.name}\n`);
+        message += `\n💰 *کۆی گشتی:* ${document.getElementById('total-amount').innerText} IQD\n`;
+        message += `📍 *لۆکەیشنی ورد:* ${locationInfo}`;
         
-        // لێرە ژمارەی مۆبایلی خۆت دابنێ
-        let phoneNumber = "9647504629237"; 
-        let message = "🍕 *داواکاری نوێ لە بوم پیتزا*\n";
-        message += "--------------------------\n";
-        
-        cart.forEach((item, index) => {
-            message += `${index + 1}- ${item.name} (${item.price.toLocaleString()} IQD)\n`;
-        });
-        
-        message += "--------------------------\n";
-        message += `💰 *کۆی گشتی:* ${document.getElementById('total-amount').innerText} IQD\n`;
-        message += `📍 *ناونیشان:* ${userLocation}\n`;
-        message += "--------------------------\n";
-        message += "تکایە 'Location'ی مۆبایلەکەشم بۆ بنێرن بۆ وردی زیاتر.";
-        
-        const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
+        window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
     displayMenu();
@@ -255,4 +236,3 @@
 
 </body>
 </html>
-

@@ -1,119 +1,49 @@
-<!DOCTYPE html>
-<html lang="ku" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بەڕێوبەرایەتی داواکارییەکان</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;500;800&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <style>
-        :root { --accent: #ff3131; --bg: #0a0b0d; --card: #16181d; }
-        body { font-family: 'Vazirmatn', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 30px; }
-        
-        .header { background: #000; padding: 20px; text-align: center; border-bottom: 3px solid var(--accent); position: sticky; top: 0; z-index: 1000; }
-        .header h1 { margin: 0; font-size: 1.4rem; color: var(--accent); letter-spacing: 1px; }
+<style>
+    .btn-print {
+        background: #555;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+    }
 
-        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
-        .s-box { background: var(--card); padding: 15px; border-radius: 18px; text-align: center; border: 1px solid #25282e; }
-        .s-box span { font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px; }
-        .s-box b { font-size: 1.2rem; color: #fff; }
+    /* ئەم بەشە تەنها کاتی چاپکردن کار دەکات */
+    @media print {
+        body * { visibility: hidden; }
+        .print-section, .print-section * { visibility: visible; }
+        .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            color: black !important;
+            background: white !important;
+            padding: 20px;
+            direction: rtl;
+        }
+        .no-print { display: none !important; }
+    }
+</style>
 
-        .container { padding: 0 15px; }
-        .order-card { background: var(--card); border-radius: 22px; padding: 20px; margin-bottom: 15px; border: 1px solid #25282e; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideIn 0.4s ease-out; }
-        
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+<script>
+    // ئەم فەنکشنە زیاد بکە بۆ ناو سکریپتەکە
+    function printOrder(id) {
+        const orderEl = document.getElementById('order-' + id);
+        orderEl.classList.add('print-section');
+        window.print();
+        orderEl.classList.remove('print-section');
+    }
 
-        .order-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .order-id { background: #25282e; color: #ffc107; padding: 4px 12px; border-radius: 50px; font-weight: bold; font-size: 0.85rem; }
-        .order-time { font-size: 0.75rem; color: #666; font-weight: bold; }
-
-        .items-area { background: #1f2229; padding: 15px; border-radius: 15px; margin: 10px 0; border: 1px solid #2d313a; }
-        .items-area b { color: #fff; display: block; margin-bottom: 5px; font-size: 1rem; }
-
-        .order-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #25282e; }
-        .price { font-size: 1.2rem; font-weight: 800; color: #fff; }
-        .btn-call { background: #25D366; color: white; padding: 10px 22px; border-radius: 14px; text-decoration: none; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-call:active { transform: scale(0.95); }
-        
-        .note { color: #ffc107; font-size: 0.85rem; background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 10px; margin-top: 10px; border: 1px dashed #443c24; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <h1>📊 بەڕێوبەرایەتی بوم پیتزا</h1>
-    </div>
-
-    <div class="summary">
-        <div class="s-box"><span>داواکارییەکان</span><b id="count">0</b></div>
-        <div class="s-box"><span>کۆی داهات</span><b id="sum">0</b></div>
-    </div>
-
-    <div class="container" id="orders-list">
-        </div>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
-            authDomain: "boompizza-5d048.firebaseapp.com",
-            databaseURL: "https://boompizza-5d048-default-rtdb.firebaseio.com",
-            projectId: "boompizza-5d048",
-            storageBucket: "boompizza-5d048.firebasestorage.app",
-            messagingSenderId: "636068289590",
-            appId: "1:636068289590:web:41fe758906140c700ecc97"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // هێنانەوەی داتاکان و ڕیزکردن بەپێی کات
-        db.ref('orders').on('value', (snapshot) => {
-            const listDiv = document.getElementById('orders-list');
-            const data = snapshot.val();
-            listDiv.innerHTML = '';
-            
-            let totalMoney = 0;
-            let orderCount = 0;
-
-            if (data) {
-                // بەکارهێنانی reverse() بۆ ئەوەی نوێترین لە سەرەتا بێت
-                const keys = Object.keys(data).reverse();
-                orderCount = keys.length;
-
-                keys.forEach(key => {
-                    const o = data[key];
-                    let p = o.total ? parseInt(o.total.toString().replace(/[^0-9]/g, '')) : 0;
-                    totalMoney += p;
-
-                    listDiv.innerHTML += `
-                        <div class="order-card">
-                            <div class="order-top">
-                                <span class="order-id">#${o.id || '0000'}</span>
-                                <span class="order-time">🕒 ${o.time || ''}</span>
-                            </div>
-                            
-                            <div class="items-area">
-                                <b>🍴 داواکاری:</b>
-                                ${Array.isArray(o.items) ? o.items.join(' + ') : (o.items || 'نادیار')}
-                            </div>
-
-                            ${o.note && o.note !== 'نییە' ? `<div class="note">📝 <b>تێبینی:</b> ${o.note}</div>` : ''}
-
-                            <div class="order-footer">
-                                <div class="price">${o.total} <small style="font-size:0.6rem">د.ع</small></div>
-                                <a href="tel:${o.phone}" class="btn-call">پەیوەندی 📞</a>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                listDiv.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">هیچ داواکارییەک نییە</p>';
-            }
-            
-            document.getElementById('count').innerText = orderCount;
-            document.getElementById('sum').innerText = totalMoney.toLocaleString() + " د.ع";
-        });
-    </script>
-</body>
-</html>
+    // لە ناو loop ەکەدا، ئەم دوگمەیە زیاد بکە بۆ هەر کارتێک:
+    // listDiv.innerHTML += `
+    //    ...
+    //    <div id="order-${o.id}" class="order-card">
+    //        ...
+    //        <button class="btn-print no-print" onclick="printOrder('${o.id}')">چاپکردنی وەسڵ 🖨️</button>
+    //    </div>
+    // `;
+</script>

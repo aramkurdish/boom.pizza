@@ -118,7 +118,8 @@
                                 <span className="text-2xl font-black text-[#ff3131]">${order.total} د.ع</span>
                             </div>
                         </div>
-                        <div className="w-full mt-6 space-y-3">
+                        <div className="w-full mt-6 space-y-3 text-center">
+                             <p className="text-[10px] text-zinc-400 mb-2">بە وێنەی شاشە (Screenshot) ئەم وەسڵە لای خۆت بپارێزە</p>
                             <button 
                                 onClick=${() => {
                                     const msg = `🆔 # ${order.orderID}\n🍴 ${order.items}\n💰 ${order.total} د.ع\n📍 ${order.location}\n📝 ${order.note || "بەبێ تێبینی"}`;
@@ -434,8 +435,10 @@
             const [showWheel, setShowWheel] = useState(false);
             const [prizesWon, setPrizesWon] = useState([]);
             const [orderNote, setOrderNote] = useState('');
+            const [manualAddress, setManualAddress] = useState('');
             const [isSending, setIsSending] = useState(false);
             const [lastOrder, setLastOrder] = useState(null);
+            const [showManualInput, setShowManualInput] = useState(false);
 
             useEffect(() => {
                 onValue(ref(db, 'categories'), (snap) => {
@@ -485,27 +488,39 @@
                 else if (pw !== null) alert("پاسوۆرد هەڵەیە!");
             };
 
-            const getGeoLocation = () => {
-                return new Promise((resolve, reject) => {
-                    if (!navigator.geolocation) {
-                        return reject(new Error("وێبگەڕەکەت لۆکەیشن پشتگیری ناکات"));
-                    }
+            const getGeoLocation = async () => {
+                if (!navigator.geolocation) {
+                    throw new Error("وێبگەڕەکەت لۆکەیشن پشتگیری ناکات");
+                }
+
+                // First Attempt: High Accuracy
+                const attempt1 = () => new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(
                         (p) => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
-                        (err) => {
-                            let msg = "هەڵە لە وەرگرتنی لۆکەیشن";
-                            if (err.code === 1) msg = "تکایە ڕێگە بدە ماڵپەڕەکە لۆکەیشن وەرگرێت (Permission Denied)";
-                            else if (err.code === 2) msg = "لۆکەیشنەکەت نادۆزرێتەوە، دڵنیابە GPS چالاکە (Unavailable)";
-                            else if (err.code === 3) msg = "کات زۆر تێپەڕی و لۆکەیشن وەرنەگیرا (Timeout)";
-                            reject(new Error(msg));
-                        },
-                        { 
-                            enableHighAccuracy: true, 
-                            timeout: 15000, 
-                            maximumAge: 10000 
-                        }
+                        (err) => reject(err),
+                        { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
                     );
                 });
+
+                // Second Attempt: Normal Accuracy (Better for In-app Browsers)
+                const attempt2 = () => new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (p) => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
+                        (err) => reject(err),
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+                    );
+                });
+
+                try {
+                    return await attempt1();
+                } catch (e) {
+                    if (e.code === 1) throw new Error("تکایە ڕێگە بدە ماڵپەڕەکە لۆکەیشن وەرگرێت");
+                    try {
+                        return await attempt2();
+                    } catch (e2) {
+                        throw new Error("لۆکەیشنەکەت نادۆزرێتەوە، تکایە ناونیشان بنووسە");
+                    }
+                }
             };
 
             const handleSendOrder = async () => {
@@ -516,16 +531,20 @@
 
                 try {
                     locationUrl = await getGeoLocation();
+                    setShowManualInput(false);
                 } catch (error) {
-                    alert(error.message);
-                    setIsSending(false);
-                    return;
-                }
-
-                if (!locationUrl) {
-                    alert("نەتوانرا لۆکەیشن وەرگیرێت. تکایە دووبارە هەوڵ بدەرەوە.");
-                    setIsSending(false);
-                    return;
+                    // If GPS fails, show the manual address input if it's not already shown
+                    if (!showManualInput) {
+                        alert(error.message + ". دەتوانی ناونیشانەکەت بە دەست بنووسیت.");
+                        setShowManualInput(true);
+                        setIsSending(false);
+                        return;
+                    } else if (!manualAddress.trim()) {
+                        alert("تکایە ناونیشان بنووسە");
+                        setIsSending(false);
+                        return;
+                    }
+                    locationUrl = "ناونیشانی دەستی: " + manualAddress;
                 }
 
                 const orderID = Math.floor(1000 + Math.random() * 9000);
@@ -546,6 +565,8 @@
                     setLastOrder(orderData);
                     setCart({});
                     setOrderNote('');
+                    setManualAddress('');
+                    setShowManualInput(false);
                     setIsSending(false);
                 } catch (e) { 
                     alert("هەڵە ڕوویدا لە ناردنی داواکارییەکە"); 
@@ -641,13 +662,28 @@
                                         </div>
                                     `)}
                                     ${prizesWon.length > 0 && html`<div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-xs text-yellow-500">🎁 خەڵاتەکانت: ${prizesWon.join(", ")}</div>`}
-                                    <textarea className="w-full bg-zinc-800 border-none p-3 rounded-xl text-white text-sm outline-none mb-4 focus:ring-1 focus:ring-[#ff3131]" rows=${2} placeholder="تێبینی..." value=${orderNote} onChange=${e => setOrderNote(e.target.value)} />
+                                    
+                                    <div className="space-y-3 mb-4">
+                                        <textarea className="w-full bg-zinc-800 border-none p-3 rounded-xl text-white text-sm outline-none focus:ring-1 focus:ring-[#ff3131]" rows=${2} placeholder="تێبینی خواردن..." value=${orderNote} onChange=${e => setOrderNote(e.target.value)} />
+                                        ${showManualInput && html`
+                                            <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                                                <p className="text-[10px] text-red-400 mb-2 font-bold">⚠️ GPS کار ناکات، تکایە ناونیشانەکەت لێرە بنووسە:</p>
+                                                <textarea className="w-full bg-zinc-800 border-none p-3 rounded-xl text-white text-sm outline-none focus:ring-1 focus:ring-[#ff3131]" rows=${2} placeholder="ناونیشانی تەواو..." value=${manualAddress} onChange=${e => setManualAddress(e.target.value)} />
+                                            </div>
+                                        `}
+                                    </div>
+
                                     <div className="my-4 flex justify-between items-center px-2">
                                         <span className="text-zinc-400 font-bold">کۆی گشتی:</span>
                                         <span className="text-2xl font-black text-white">${totalAmount.toLocaleString()} د.ع</span>
                                     </div>
                                     <button onClick=${handleSendOrder} disabled=${isSending} className="w-full bg-[#25D366] text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-transform">
-                                        ${isSending ? '⏳ چاوەڕوانی لۆکەیشن...' : '✅ داواکردن و بینینی وەسڵ'}
+                                        ${isSending ? html`
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                <span>چاوەڕوانبە...</span>
+                                            </div>
+                                        ` : '✅ داواکردن و بینینی وەسڵ'}
                                     </button>
                                 </div>
                             `}

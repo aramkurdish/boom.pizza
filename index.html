@@ -1,357 +1,391 @@
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Boom's Pizza | بوم پیتزا</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary-red: #ff3131; --dark-bg: #0a0a0a; --card-bg: #161616; --text-gold: #ffc107; --whatsapp-green: #25D366; }
-        body { font-family: 'Vazirmatn', sans-serif; margin: 0; background-color: var(--dark-bg); color: #ffffff; direction: rtl; overflow-x: hidden; }
-        
-        .admin-nav { display: flex; background: #000; border-bottom: 1px solid var(--primary-red); position: sticky; top: 0; z-index: 5000; }
-        .nav-link { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 0.9rem; font-weight: bold; color: #666; }
-        .nav-link.active { color: var(--primary-red); border-bottom: 3px solid var(--primary-red); background: #111; }
-
-        header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); position: relative; }
-        header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
-
-        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; display: none; }
-        
-        .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; justify-content: center; align-items: center; }
-        .wheel-content { position: relative; text-align: center; }
-        #luckyWheel { border-radius: 50%; border: 8px solid #333; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); width: 320px; height: 320px; }
-        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid var(--primary-red); z-index: 10; }
-        .spin-btn-main { background: var(--primary-red); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
-
-        .category-container { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: var(--dark-bg); }
-        .cat-card { min-width: 85px; text-align: center; cursor: pointer; }
-        .cat-card img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid #333; object-fit: cover; }
-        .cat-card.active img { border-color: var(--primary-red); transform: scale(1.1); box-shadow: 0 0 15px var(--primary-red); }
-
-        .menu-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .item-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; border: 1px solid #222; position: relative; display: flex; flex-direction: column; }
-        .item-card img { width: 100%; height: 120px; object-fit: cover; }
-        .item-info { padding: 10px; text-align: center; flex-grow: 1; }
-        
-        #cart-section { background: #111; border-radius: 20px; padding: 20px; margin: 20px 15px 100px; border: 1px solid #333; }
-        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
-        .remove-cart-btn { background: none; border: 1px solid #555; color: #ff3131; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-weight: bold; }
-        .history-item { font-size: 0.9rem; color: var(--text-gold); margin-top: 5px; padding: 5px; background: rgba(255,193,7,0.1); border-radius: 5px; }
-
-        .page { display: none; }
-        .page.active { display: block; }
-        .order-input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-family: 'Vazirmatn'; box-sizing: border-box; }
-        .whatsapp-btn { background: var(--whatsapp-green); color: white; padding: 16px; border-radius: 50px; width: 100%; border: none; font-weight: bold; cursor: pointer; font-family: 'Vazirmatn'; margin-top: 15px; }
-        .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; margin: 10px; cursor: pointer; font-family: 'Vazirmatn'; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff3131;
+            border-radius: 10px;
+        }
+        @keyframes pulse-gold {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 193, 7, 0); }
+        }
+        .animate-pulse-gold {
+            animation: pulse-gold 2s infinite;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0/client",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/"
+  }
+}
+</script>
 </head>
 <body>
+    <div id="root"></div>
 
-<button class="spin-launcher" id="spinLauncherBtn" onclick="toggleWheel(true)">🎰 چەرخی بەخت</button>
+    <script type="module">
+        import React, { useState, useEffect, useRef, useCallback } from 'react';
+        import ReactDOM from 'react-dom';
+        import { initializeApp } from 'firebase/app';
+        import { getDatabase, ref, onValue, push, set, update, remove, query, orderByChild, equalTo } from 'firebase/database';
+        import * as Lucide from 'lucide-react';
 
-<div class="wheel-overlay" id="wheelOverlay">
-    <div class="wheel-content">
-        <span style="position:absolute; top:-50px; right:0; color:white; font-size:1.5rem; cursor:pointer;" onclick="toggleWheel(false)">✖</span>
-        <div class="wheel-pointer"></div>
-        <canvas id="luckyWheel" width="350" height="350"></canvas>
-        <br>
-        <button class="spin-btn-main" id="mainSpinBtn" onclick="spinWheel()">بسوڕێنە! 🎰</button>
-    </div>
-</div>
-
-<div class="admin-nav">
-    <div class="nav-link active" onclick="switchPage('main-site', this)">🏠 مێنۆ</div>
-    <div class="nav-link" onclick="handleAdminAccess('orders-site', this)">📋 داواکارییەکان</div>
-    <div class="nav-link" onclick="handleAdminAccess('edit-site', this)">⚙️ دەستکاری</div>
-</div>
-
-<div id="main-site" class="page active">
-    <header><h1>Boom's Pizza</h1></header>
-    <div class="category-container">
-        <div class="cat-card active" onclick="loadFirebaseMenu('pizza', this)"><img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150"><p>پیتزا</p></div>
-        <div class="cat-card" onclick="loadFirebaseMenu('burger', this)"><img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150"><p>بەرگر</p></div>
-        <div class="cat-card" onclick="loadFirebaseMenu('shawarma', this)"><img src="https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg"><p>شاوەرمە</p></div>
-        <div class="cat-card" onclick="loadFirebaseMenu('finger', this)"><img src="https://i.postimg.cc/FHWp2K1z/fried-chicken-fingers.jpg"><p>پەنجەکان</p></div>
-        <div class="cat-card" onclick="loadFirebaseMenu('drink', this)"><img src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150"><p>خواردنەوە</p></div>
-    </div>
-    <div class="menu-section" id="menu-display"></div>
-    <div id="cart-section">
-        <h3 style="color:var(--text-gold);">🛒 سەبەتەکەت</h3>
-        <div id="cart-items"></div>
-        <div id="spin-history" style="border-top:1px solid #333; margin-top:10px; padding-top:10px;"></div>
-        <textarea id="order-note" class="order-input" rows="2" placeholder="تێبینی یان ناونیشان..."></textarea>
-        <div style="text-align:center; margin:20px 0; font-size:1.4rem; font-weight:bold;">کۆ: <span id="total-amount">0</span> د.ع</div>
-        <button class="whatsapp-btn" id="sendBtn" onclick="getLocationAndSend()">ناردنی داواکاری و لۆکەیشن ✅</button>
-    </div>
-</div>
-
-<div id="edit-site" class="page" style="padding:20px;">
-    <div style="background:#111; padding:20px; border-radius:20px; border:1px solid #333;">
-        <h3 id="form-title">➕ زیادکردن/دەستکاری</h3>
-        <input type="hidden" id="edit-key">
-        <input type="text" id="adm-name" class="order-input" placeholder="ناوی خواردن">
-        <input type="number" id="adm-price" class="order-input" placeholder="نرخ">
-        <input type="number" id="adm-disc" class="order-input" placeholder="داشکان (دینار)">
-        <input type="text" id="adm-img" class="order-input" placeholder="لێنکی وێنە">
-        <select id="adm-cat" class="order-input">
-            <option value="pizza">پیتزا</option>
-            <option value="burger">بەرگر</option>
-            <option value="shawarma">شاوەرمە</option>
-            <option value="finger">پەنجەکان (Finger)</option> <option value="drink">خواردنەوە</option>
-        </select>
-        <button class="add-btn" id="save-btn" style="width:100%; margin-top:20px; background:var(--whatsapp-green);" onclick="uploadItem()">پاشەکەوتکردن</button>
-    </div>
-    <div id="admin-items-list" style="margin-top:20px;"></div>
-</div>
-
-<div id="orders-site" class="page" style="padding:20px;"><div id="firebase-orders"></div></div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
-        authDomain: "boompizza-5d048.firebaseapp.com",
-        databaseURL: "https://boompizza-5d048-default-rtdb.firebaseio.com",
-        projectId: "boompizza-5d048",
-        storageBucket: "boompizza-5d048.firebasestorage.app",
-        messagingSenderId: "636068289590",
-        appId: "1:636068289590:web:41fe758906140c700ecc97"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let cart = {}; 
-    let currentRotation = 0;
-    let spinPrizes = [];
-
-    const prizes = [
-        { label: "%5 Discount", color: "#ff3131", prob: 60 },
-        { label: "Free Cola", color: "#ffc107", prob: 20 },
-        { label: "%10 Discount", color: "#161616", prob: 10 },
-        { label: "Boom Pizza", color: "#25D366", prob: 5 },
-        { label: "Gift Box", color: "#444", prob: 5 }
-    ];
-
-    const canvas = document.getElementById('luckyWheel');
-    const ctx = canvas.getContext('2d');
-
-    function checkSpinAccess() {
-        const spinCount = parseInt(localStorage.getItem('boomSpinCount') || "0");
-        const canSpinAfterOrder = localStorage.getItem('canSpinBoom') === 'true';
-        document.getElementById('spinLauncherBtn').style.display = (spinCount === 0 || canSpinAfterOrder) ? 'block' : 'none';
-    }
-
-    function drawWheel() {
-        const arc = (2 * Math.PI) / prizes.length;
-        prizes.forEach((p, i) => {
-            ctx.beginPath(); ctx.fillStyle = p.color;
-            ctx.moveTo(175, 175); ctx.arc(175, 175, 175, i * arc, (i+1) * arc);
-            ctx.fill(); ctx.save();
-            ctx.translate(175, 175); ctx.rotate(i * arc + arc/2);
-            ctx.textAlign = "right"; ctx.fillStyle = "white";
-            ctx.font = "bold 14px Vazirmatn"; ctx.fillText(p.label, 150, 10);
-            ctx.restore();
-        });
-    }
-
-    function toggleWheel(show) {
-        document.getElementById('wheelOverlay').style.display = show ? 'flex' : 'none';
-        if(show) drawWheel();
-    }
-
-    function spinWheel() {
-        if (window.isSpinning) return;
-        window.isSpinning = true;
-        const rand = Math.random() * 100;
-        let cumulative = 0, idx = 0;
-        for (let i = 0; i < prizes.length; i++) {
-            cumulative += prizes[i].prob;
-            if (rand <= cumulative) { idx = i; break; }
-        }
-        const deg = 360 / prizes.length;
-        const target = 270 - (idx * deg + deg/2);
-        currentRotation += (10 * 360) + target - (currentRotation % 360);
-        canvas.style.transform = `rotate(${currentRotation}deg)`;
-        
-        setTimeout(() => { 
-            window.isSpinning = false;
-            const prizeLabel = prizes[idx].label;
-            let count = parseInt(localStorage.getItem('boomSpinCount') || "0");
-            localStorage.setItem('boomSpinCount', (count + 1).toString());
-            localStorage.setItem('canSpinBoom', 'false');
-            spinPrizes.push(prizeLabel);
-            updateSpinHistoryUI();
-            alert("پیرۆزە! " + prizeLabel);
-            setTimeout(() => { toggleWheel(false); checkSpinAccess(); }, 1000);
-        }, 5000);
-    }
-
-    function updateSpinHistoryUI() {
-        const hist = document.getElementById('spin-history');
-        hist.innerHTML = '<b>🎁 خەڵاتەکانت:</b>';
-        spinPrizes.forEach(p => { hist.innerHTML += `<div class="history-item">✨ ${p}</div>`; });
-    }
-
-    function addToCart(name, price) {
-        if (cart[name]) cart[name].qty++;
-        else cart[name] = { price, qty: 1 };
-        updateCartUI();
-    }
-
-    function removeFromCart(name) {
-        if (cart[name].qty > 1) cart[name].qty--;
-        else delete cart[name];
-        updateCartUI();
-    }
-
-    function updateCartUI() {
-        let total = 0;
-        const list = document.getElementById('cart-items');
-        list.innerHTML = '';
-        for (const name in cart) {
-            const item = cart[name];
-            total += item.price * item.qty;
-            list.innerHTML += `<div class="cart-item-row">
-                <span>${item.qty}x ${name} - ${(item.price * item.qty).toLocaleString()}</span>
-                <button class="remove-cart-btn" onclick="removeFromCart('${name}')">✖</button>
-            </div>`;
-        }
-        document.getElementById('total-amount').innerText = total.toLocaleString();
-    }
-
-    function getLocationAndSend() {
-        if(Object.keys(cart).length === 0) return alert("سەبەتە بەتاڵە!");
-        const btn = document.getElementById('sendBtn');
-        btn.innerText = "⏳ لۆکەیشن..."; btn.disabled = true;
-        navigator.geolocation.getCurrentPosition((pos) => {
-            processOrder(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
-        }, () => processOrder("دیاری نەکراوە"), {enableHighAccuracy:true});
-    }
-
-    function processOrder(mapUrl) {
-        const orderID = Math.floor(1000 + Math.random() * 9000);
-        const note = document.getElementById('order-note').value;
-        const total = document.getElementById('total-amount').innerText;
-        let itemsStr = "";
-        for (const name in cart) itemsStr += `${cart[name].qty}x ${name}, `;
-        let prizeStr = spinPrizes.length > 0 ? " | 🎁 خەڵات: " + spinPrizes.join(", ") : "";
-
-        db.ref('orders/' + orderID).set({ orderID, items: itemsStr + prizeStr, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
-            localStorage.setItem('canSpinBoom', 'true');
-            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${itemsStr}${prizeStr}\n💰 ${total}\n📍 ${mapUrl}\n📝 ${note}`)}`;
-        });
-    }
-
-    function uploadItem() {
-        const key = document.getElementById('edit-key').value;
-        const data = {
-            name: document.getElementById('adm-name').value,
-            price: parseInt(document.getElementById('adm-price').value),
-            discount: parseInt(document.getElementById('adm-disc').value) || 0,
-            img: document.getElementById('adm-img').value || 'https://via.placeholder.com/150',
-            category: document.getElementById('adm-cat').value
+        // --- Firebase Setup ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
+            authDomain: "boompizza-5d048.firebaseapp.com",
+            databaseURL: "https://boompizza-5d048-default-rtdb.firebaseio.com",
+            projectId: "boompizza-5d048",
+            storageBucket: "boompizza-5d048.firebasestorage.app",
+            messagingSenderId: "636068289590",
+            appId: "1:636068289590:web:41fe758906140c700ecc97"
         };
-        if(key) db.ref('menu_items').child(key).update(data);
-        else db.ref('menu_items').push(data);
-        resetForm();
-    }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    function fetchAdminList() {
-        db.ref('menu_items').on('value', snap => {
-            const list = document.getElementById('admin-items-list');
-            list.innerHTML = '<h3>📦 بەڕێوەبردن</h3>';
-            snap.forEach(child => {
-                const item = child.val();
-                list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>${item.name}</b> (${item.price}) <br><small>📉 داشکان: ${item.discount || 0}</small></span>
-                    <div>
-                        <button onclick="editItem('${child.key}', '${item.name}', ${item.price}, ${item.discount||0}, '${item.img}', '${item.category}')" style="background:orange; border:none; color:white; padding:5px 10px; border-radius:5px;">Edit</button>
-                        <button onclick="deleteItem('${child.key}')" style="background:red; border:none; color:white; padding:5px 10px; border-radius:5px;">Delete</button>
-                    </div>
-                </div>`;
-            });
-        });
-    }
+        // --- Components ---
 
-    function deleteItem(key) { if(confirm("دڵنیای لە سڕینەوە؟")) db.ref('menu_items').child(key).remove(); }
+        const LuckyWheel = ({ onWin, onClose }) => {
+            const [isSpinning, setIsSpinning] = useState(false);
+            const canvasRef = useRef(null);
+            const [rotation, setRotation] = useState(0);
 
-    function editItem(key, name, price, disc, img, cat) {
-        document.getElementById('edit-key').value = key;
-        document.getElementById('adm-name').value = name;
-        document.getElementById('adm-price').value = price;
-        document.getElementById('adm-disc').value = disc;
-        document.getElementById('adm-img').value = img;
-        document.getElementById('adm-cat').value = cat;
-        document.getElementById('form-title').innerText = "✏️ دەستکاری";
-        window.scrollTo(0,0);
-    }
+            const PRIZES = [
+                { label: "%5 داشکان", color: "#ff3131", prob: 60 },
+                { label: "کۆلای بەلاش", color: "#ffc107", prob: 20 },
+                { label: "%10 داشکان", color: "#161616", prob: 10 },
+                { label: "بوم پیتزا", color: "#25D366", prob: 5 },
+                { label: "دیاری تایبەت", color: "#444444", prob: 5 }
+            ];
 
-    function resetForm() {
-        document.getElementById('edit-key').value = '';
-        document.getElementById('adm-name').value = '';
-        document.getElementById('adm-price').value = '';
-        document.getElementById('adm-disc').value = '';
-        document.getElementById('form-title').innerText = "➕ زیادکردن";
-    }
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const arc = (2 * Math.PI) / PRIZES.length;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    function loadFirebaseMenu(cat, el) {
-        document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        db.ref('menu_items').orderByChild('category').equalTo(cat).on('value', snap => {
-            const display = document.getElementById('menu-display');
-            display.innerHTML = '';
-            snap.forEach(child => {
-                const item = child.val();
+                PRIZES.forEach((p, i) => {
+                    ctx.beginPath();
+                    ctx.fillStyle = p.color;
+                    ctx.moveTo(175, 175);
+                    ctx.arc(175, 175, 170, i * arc, (i + 1) * arc);
+                    ctx.fill();
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.save();
+                    ctx.translate(175, 175);
+                    ctx.rotate(i * arc + arc / 2);
+                    ctx.textAlign = "right";
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 14px Vazirmatn";
+                    ctx.fillText(p.label, 150, 5);
+                    ctx.restore();
+                });
+            }, []);
+
+            const spin = () => {
+                if (isSpinning) return;
+                setIsSpinning(true);
+
+                const rand = Math.random() * 100;
+                let cumulative = 0;
+                let winnerIndex = 0;
+                for (let i = 0; i < PRIZES.length; i++) {
+                    cumulative += PRIZES[i].prob;
+                    if (rand <= cumulative) {
+                        winnerIndex = i;
+                        break;
+                    }
+                }
+
+                const degPerSlice = 360 / PRIZES.length;
+                const targetAngle = 270 - (winnerIndex * degPerSlice + degPerSlice / 2);
+                const extraSpins = 10 * 360;
+                const newRotation = rotation + extraSpins + (targetAngle - (rotation % 360));
+
+                setRotation(newRotation);
+
+                setTimeout(() => {
+                    setIsSpinning(false);
+                    onWin(PRIZES[winnerIndex].label);
+                }, 5000);
+            };
+
+            return React.createElement('div', { className: "fixed inset-0 z-[6000] bg-black/90 flex flex-col items-center justify-center p-4" },
+                React.createElement('button', { onClick: onClose, className: "absolute top-6 right-6 text-white text-3xl hover:text-red-500 transition-colors" }, "✕"),
+                React.createElement('div', { className: "relative mb-8" },
+                    React.createElement('div', { className: "absolute top-[-15px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-500 z-10 drop-shadow-lg" }),
+                    React.createElement('canvas', {
+                        ref: canvasRef,
+                        width: "350",
+                        height: "350",
+                        className: "rounded-full border-[8px] border-[#333] shadow-2xl transition-transform duration-[5000ms]",
+                        style: { transitionTimingFunction: 'cubic-bezier(0.15, 0, 0.15, 1)', transform: `rotate(${rotation}deg)` }
+                    })
+                ),
+                React.createElement('button', {
+                    onClick: spin,
+                    disabled: isSpinning,
+                    className: `px-12 py-4 rounded-full font-bold text-xl text-white transition-all ${isSpinning ? 'bg-gray-600' : 'bg-[#ff3131] hover:scale-110 shadow-lg shadow-red-500/20'}`
+                }, isSpinning ? 'دەسوڕێتەوە...' : 'بسوڕێنە! 🎰'),
+                React.createElement('p', { className: "mt-6 text-gray-400 text-sm" }, "بەختی خۆت تاقی بکەرەوە بۆ بەدەستهێنانی خەڵاتی شایستە!")
+            );
+        };
+
+        const AdminPanel = () => {
+            const [activeTab, setActiveTab] = useState('orders');
+            const [menuItems, setMenuItems] = useState([]);
+            const [orders, setOrders] = useState([]);
+            const [editingItem, setEditingItem] = useState({ name: '', price: 0, discount: 0, img: '', category: 'pizza' });
+
+            useEffect(() => {
+                const unsubMenu = onValue(ref(db, 'menu_items'), (snapshot) => {
+                    const data = snapshot.val();
+                    setMenuItems(data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : []);
+                });
+                const unsubOrders = onValue(ref(db, 'orders'), (snapshot) => {
+                    const data = snapshot.val();
+                    const list = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
+                    setOrders(list.reverse());
+                });
+                return () => { unsubMenu(); unsubOrders(); };
+            }, []);
+
+            const handleSaveItem = async (e) => {
+                e.preventDefault();
+                if (!editingItem.name || !editingItem.price) return alert("تکایە هەموو خانەکان پڕبکەرەوە");
+                if (editingItem.id) {
+                    const { id, ...data } = editingItem;
+                    await update(ref(db, `menu_items/${id}`), data);
+                } else {
+                    await push(ref(db, 'menu_items'), editingItem);
+                }
+                setEditingItem({ name: '', price: 0, discount: 0, img: '', category: 'pizza' });
+            };
+
+            const handleEdit = (item) => {
+                setEditingItem(item);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            return React.createElement('div', { className: "p-4 max-w-5xl mx-auto pb-24" },
+                React.createElement('div', { className: "flex gap-4 mb-8 bg-zinc-900 p-2 rounded-xl border border-zinc-800" },
+                    React.createElement('button', { onClick: () => setActiveTab('orders'), className: `flex-1 py-3 rounded-lg font-bold transition-all ${activeTab === 'orders' ? 'bg-[#ff3131] text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-800'}` }, `📥 داواکارییەکان (${orders.length})`),
+                    React.createElement('button', { onClick: () => setActiveTab('items'), className: `flex-1 py-3 rounded-lg font-bold transition-all ${activeTab === 'items' ? 'bg-[#ff3131] text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-800'}` }, "⚙️ دەستکاری مێنۆ")
+                ),
+                activeTab === 'orders' ? React.createElement('div', { className: "space-y-4" },
+                    React.createElement('h2', { className: "text-2xl font-bold mb-4 text-[#ffc107]" }, "لیستی داواکارییەکان"),
+                    orders.length === 0 ? React.createElement('div', { className: "text-center py-20 text-zinc-500" }, "هیچ داواکارییەک نییە") :
+                    orders.map(o => React.createElement('div', { key: o.id, className: "bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl mb-4" },
+                        React.createElement('div', { className: "flex justify-between items-start mb-4" },
+                            React.createElement('div', null,
+                                React.createElement('span', { className: "text-[#ff3131] font-bold text-lg ml-2" }, `🆔 #${o.orderID}`),
+                                React.createElement('span', { className: "text-zinc-500 text-sm" }, `⏰ ${o.time}`)
+                            ),
+                            React.createElement('button', { onClick: () => remove(ref(db, `orders/${o.id}`)), className: "p-2 text-zinc-500 hover:text-green-500 transition-colors" }, React.createElement(Lucide.CheckCircle, { size: 24 }))
+                        ),
+                        React.createElement('div', { className: "space-y-2 text-zinc-300" },
+                            React.createElement('p', null, React.createElement('span', { className: "text-zinc-500" }, "خواردنەکان: "), React.createElement('span', { className: "font-bold text-white" }, o.items)),
+                            React.createElement('p', null, React.createElement('span', { className: "text-zinc-500" }, "کۆی گشتی: "), React.createElement('span', { className: "text-[#ffc107] font-bold" }, `${o.total} د.ع`)),
+                            React.createElement('p', null, React.createElement('span', { className: "text-zinc-500" }, "تێبینی: "), React.createElement('span', null, o.note || "نییە"))
+                        ),
+                        React.createElement('div', { className: "mt-6" },
+                            React.createElement('a', { href: o.location, target: "_blank", className: "flex bg-blue-600/20 text-blue-400 border border-blue-600/30 py-3 rounded-xl items-center justify-center gap-2 font-bold hover:bg-blue-600/30 transition-all" }, React.createElement(Lucide.ExternalLink, { size: 18 }), "بینینی لۆکەیشن")
+                        )
+                    ))
+                ) : React.createElement('div', { className: "space-y-8" },
+                    React.createElement('form', { onSubmit: handleSaveItem, className: "bg-zinc-900 p-6 rounded-2xl border border-zinc-800 space-y-4" },
+                        React.createElement('h2', { className: "text-xl font-bold text-white flex items-center gap-2" }, editingItem.id ? React.createElement(Lucide.Edit, { size: 20 }) : React.createElement(Lucide.Plus, { size: 20 }), editingItem.id ? 'دەستکاری خواردن' : 'زیادکردنی خواردنی نوێ'),
+                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                            React.createElement('input', { type: "text", placeholder: "ناوی خواردن", className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]", value: editingItem.name, onChange: e => setEditingItem({ ...editingItem, name: e.target.value }) }),
+                            React.createElement('input', { type: "number", placeholder: "نرخ", className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]", value: editingItem.price || '', onChange: e => setEditingItem({ ...editingItem, price: parseInt(e.target.value) }) }),
+                            React.createElement('input', { type: "number", placeholder: "داشکان", className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]", value: editingItem.discount || '', onChange: e => setEditingItem({ ...editingItem, discount: parseInt(e.target.value) }) }),
+                            React.createElement('select', { className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]", value: editingItem.category, onChange: e => setEditingItem({ ...editingItem, category: e.target.value }) },
+                                ['pizza', 'burger', 'shawarma', 'finger', 'drink'].map(c => React.createElement('option', { key: c, value: c }, c))
+                            ),
+                            React.createElement('input', { type: "text", placeholder: "لێنکی وێنە", className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131] md:col-span-2", value: editingItem.img, onChange: e => setEditingItem({ ...editingItem, img: e.target.value }) })
+                        ),
+                        React.createElement('button', { className: "w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all" }, editingItem.id ? 'پاشەکەوتکردنی گۆڕانکارییەکان' : 'زیادکردنی خواردن'),
+                        editingItem.id && React.createElement('button', { type: "button", onClick: () => setEditingItem({ name: '', price: 0, discount: 0, img: '', category: 'pizza' }), className: "w-full bg-zinc-800 text-zinc-400 py-2 rounded-xl" }, "لابردن")
+                    ),
+                    React.createElement('div', { className: "space-y-4" },
+                        React.createElement('h2', { className: "text-xl font-bold text-white" }, `بەڕێوەبردن (${menuItems.length})`),
+                        menuItems.map(item => React.createElement('div', { key: item.id, className: "bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center justify-between mb-2" },
+                            React.createElement('div', { className: "flex items-center gap-4" },
+                                React.createElement('img', { src: item.img, className: "w-12 h-12 rounded-full object-cover" }),
+                                React.createElement('div', null, React.createElement('h4', { className: "font-bold text-white" }, item.name), React.createElement('p', { className: "text-xs text-zinc-500" }, `${item.price} د.ع - ${item.category}`))
+                            ),
+                            React.createElement('div', { className: "flex gap-2" },
+                                React.createElement('button', { onClick: () => handleEdit(item), className: "p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg" }, React.createElement(Lucide.Edit, { size: 20 })),
+                                React.createElement('button', { onClick: () => remove(ref(db, `menu_items/${item.id}`)), className: "p-2 text-red-500 hover:bg-red-500/10 rounded-lg" }, React.createElement(Lucide.Trash2, { size: 20 }))
+                            )
+                        ))
+                    )
+                )
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('menu');
+            const [activeCategory, setActiveCategory] = useState('pizza');
+            const [menuItems, setMenuItems] = useState([]);
+            const [cart, setCart] = useState({});
+            const [showWheel, setShowWheel] = useState(false);
+            const [prizes, setPrizes] = useState([]);
+            const [orderNote, setOrderNote] = useState('');
+            const [isSending, setIsSending] = useState(false);
+
+            const CATEGORIES = [
+                { id: 'pizza', name: 'پیتزا', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150' },
+                { id: 'burger', name: 'بەرگر', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150' },
+                { id: 'shawarma', name: 'شاوەرمە', img: 'https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg' },
+                { id: 'finger', name: 'پەنجەکان', img: 'https://i.postimg.cc/FHWp2K1z/fried-chicken-fingers.jpg' },
+                { id: 'drink', name: 'خواردنەوە', img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150' }
+            ];
+
+            useEffect(() => {
+                const unsub = onValue(query(ref(db, 'menu_items'), orderByChild('category'), equalTo(activeCategory)), (snapshot) => {
+                    const data = snapshot.val();
+                    setMenuItems(data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : []);
+                });
+                return () => unsub();
+            }, [activeCategory]);
+
+            const canSpin = localStorage.getItem('canSpinBoom') === 'true' || !localStorage.getItem('boomSpinCount');
+
+            const addToCart = (item) => {
                 const finalPrice = item.price - (item.discount || 0);
-                display.innerHTML += `<div class="item-card">
-                    <img src="${item.img}">
-                    <div class="item-info">
-                        <h3>${item.name}</h3>
-                        ${item.discount > 0 ? `<s style="color:gray; font-size:0.8rem;">${item.price}</s> <b style="color:var(--primary-red);">${finalPrice.toLocaleString()}</b>` : `<b>${item.price.toLocaleString()}</b>`}
-                    </div>
-                    <button class="add-btn" onclick="addToCart('${item.name}', ${finalPrice})">زیادکردن +</button>
-                </div>`;
-            });
-        });
-    }
+                setCart(prev => {
+                    const existing = prev[item.name];
+                    return { ...prev, [item.name]: { name: item.name, price: finalPrice, qty: (existing?.qty || 0) + 1 } };
+                });
+            };
 
-    function handleAdminAccess(id, btn) {
-        if(prompt("پاسوۆرد:") === "1998a") {
-            switchPage(id, btn);
-            if(id === 'orders-site') fetchOrders();
-            if(id === 'edit-site') fetchAdminList();
-        } else alert("هەڵەیە!");
-    }
+            const removeFromCart = (name) => {
+                setCart(prev => {
+                    const existing = prev[name];
+                    if (!existing) return prev;
+                    if (existing.qty > 1) return { ...prev, [name]: { ...existing, qty: existing.qty - 1 } };
+                    const newCart = { ...prev }; delete newCart[name]; return newCart;
+                });
+            };
 
-    function switchPage(id, btn) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        btn.classList.add('active');
-    }
+            const totalAmount = Object.values(cart).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
 
-    function fetchOrders() {
-        db.ref('orders').on('value', snap => {
-            const div = document.getElementById('firebase-orders');
-            div.innerHTML = '<h3>📥 داواکارییەکان</h3>';
-            snap.forEach(child => {
-                const o = child.val();
-                div.innerHTML += `<div style="background:#111; padding:15px; border:1px solid #333; border-radius:15px; margin-bottom:10px;">
-                    <p>🆔 #${o.orderID} | ⏰ ${o.time}</p>
-                    <p>🍴 ${o.items}</p>
-                    <p>💰 ${o.total} د.ع</p>
-                    <p>📝 تێبینی: ${o.note || "نییە"}</p>
-                    <a href="${o.location}" target="_blank" style="color:cyan; text-decoration:none; display:block; margin:10px 0;">📍 بینینی لۆکەیشن</a>
-                    <button onclick="db.ref('orders').child('${child.key}').remove()" style="width:100%; background:#444; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">سڕینەوە (تەواوبوو)</button>
-                </div>`;
-            });
-        });
-    }
+            const handleAdminAccess = (target) => {
+                const pw = prompt("تکایە پاسوۆرد بنووسە:");
+                if (pw === "1998a") setView(target);
+                else if (pw !== null) alert("پاسوۆرد هەڵەیە!");
+            };
 
-    window.onload = () => { loadFirebaseMenu('pizza', document.querySelector('.cat-card')); checkSpinAccess(); };
-</script>
+            const handleSendOrder = async () => {
+                if (Object.keys(cart).length === 0) return alert("سەبەتەکەت بەتاڵە!");
+                setIsSending(true);
+                const pos = await new Promise(resolve => navigator.geolocation.getCurrentPosition(
+                    p => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
+                    () => resolve("دیاری نەکراوە"), { timeout: 5000 }
+                ));
+                const orderID = Math.floor(1000 + Math.random() * 9000);
+                const itemsStr = Object.values(cart).map(i => `${i.qty}x ${i.name}`).join(", ");
+                const prizeStr = prizes.length > 0 ? ` | 🎁 خەڵات: ${prizes.join(", ")}` : "";
+                const orderData = { orderID, items: itemsStr + prizeStr, total: totalAmount.toLocaleString(), location: pos, note: orderNote, time: new Date().toLocaleString('ku-IQ') };
+
+                try {
+                    await set(ref(db, `orders/${orderID}`), orderData);
+                    localStorage.setItem('canSpinBoom', 'true');
+                    window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${itemsStr}${prizeStr}\n💰 ${totalAmount.toLocaleString()} د.ع\n📍 ${pos}\n📝 ${orderNote || "بەبێ تێبینی"}`)}`;
+                } catch { alert("هەڵە ڕوویدا"); setIsSending(false); }
+            };
+
+            return React.createElement('div', { className: "min-h-screen bg-[#0a0a0a] pb-24 relative overflow-x-hidden" },
+                React.createElement('nav', { className: "sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800 flex items-center justify-around h-16" },
+                    React.createElement('button', { onClick: () => setView('menu'), className: `flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'menu' ? 'text-[#ff3131]' : 'text-zinc-500'}` }, React.createElement(Lucide.LayoutGrid, { size: 20 }), React.createElement('span', { className: "text-[10px] font-bold" }, "مێنۆ")),
+                    React.createElement('button', { onClick: () => handleAdminAccess('admin_orders'), className: `flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'admin_orders' ? 'text-[#ff3131]' : 'text-zinc-500'}` }, React.createElement(Lucide.ClipboardList, { size: 20 }), React.createElement('span', { className: "text-[10px] font-bold" }, "داواکارییەکان")),
+                    React.createElement('button', { onClick: () => handleAdminAccess('admin_items'), className: `flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'admin_items' ? 'text-[#ff3131]' : 'text-zinc-500'}` }, React.createElement(Lucide.Settings, { size: 20 }), React.createElement('span', { className: "text-[10px] font-bold" }, "دەستکاری"))
+                ),
+                view === 'menu' ? React.createElement(React.Fragment, null,
+                    React.createElement('header', { className: "relative h-48 flex items-center justify-center overflow-hidden border-b-4 border-[#ff3131]" },
+                        React.createElement('img', { src: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1470&auto=format&fit=crop", className: "absolute inset-0 w-full h-full object-cover brightness-[0.3]" }),
+                        React.createElement('div', { className: "relative z-10 text-center" },
+                            React.createElement('h1', { className: "text-5xl font-black text-[#ffc107] drop-shadow-[0_2px_10px_rgba(0,0,0,1)] tracking-tighter" }, "BOOM'S PIZZA"),
+                            React.createElement('p', { className: "text-white font-bold mt-2 text-lg" }, "چێژێکی بێ وێنە لەگەڵ بوم پیتزا")
+                        )
+                    ),
+                    canSpin && React.createElement('button', { onClick: () => setShowWheel(true), className: "fixed bottom-28 left-4 z-40 bg-[#ffc107] text-black px-4 py-2 rounded-full font-bold shadow-xl animate-pulse-gold border-2 border-white/20" }, "🎰 چەرخی بەخت"),
+                    React.createElement('div', { className: "flex overflow-x-auto p-4 gap-4 no-scrollbar bg-zinc-900/50" },
+                        CATEGORIES.map(cat => React.createElement('button', { key: cat.id, onClick: () => setActiveCategory(cat.id), className: `flex flex-col items-center min-w-[80px] transition-transform active:scale-90 ${activeCategory === cat.id ? 'scale-110' : 'opacity-60'}` },
+                            React.createElement('div', { className: `w-16 h-16 rounded-full overflow-hidden border-2 mb-2 ${activeCategory === cat.id ? 'border-[#ff3131] shadow-[0_0_15px_rgba(255,49,49,0.5)]' : 'border-zinc-700'}` }, React.createElement('img', { src: cat.img, className: "w-full h-full object-cover" })),
+                            React.createElement('span', { className: `text-xs font-bold ${activeCategory === cat.id ? 'text-[#ff3131]' : 'text-zinc-400'}` }, cat.name)
+                        ))
+                    ),
+                    React.createElement('div', { className: "grid grid-cols-2 gap-4 p-4" },
+                        menuItems.map(item => {
+                            const finalPrice = item.price - (item.discount || 0);
+                            return React.createElement('div', { key: item.id, className: "bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col shadow-lg" },
+                                React.createElement('div', { className: "relative h-32 overflow-hidden" }, React.createElement('img', { src: item.img, className: "w-full h-full object-cover transition-transform hover:scale-110 duration-500" }), item.discount > 0 && React.createElement('span', { className: "absolute top-2 right-2 bg-[#ff3131] text-white text-[10px] px-2 py-1 rounded-full font-bold" }, "داشکان!")),
+                                React.createElement('div', { className: "p-3 text-center flex-grow" }, React.createElement('h3', { className: "font-bold text-sm text-white mb-1 line-clamp-1" }, item.name), React.createElement('div', { className: "flex flex-col items-center" }, item.discount > 0 ? React.createElement(React.Fragment, null, React.createElement('span', { className: "text-zinc-500 line-through text-[10px]" }, item.price.toLocaleString()), React.createElement('span', { className: "text-[#ff3131] font-bold text-sm" }, `${finalPrice.toLocaleString()} د.ع`)) : React.createElement('span', { className: "text-white font-bold text-sm" }, `${item.price.toLocaleString()} د.ع`))),
+                                React.createElement('button', { onClick: () => addToCart(item), className: "w-full bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs flex items-center justify-center gap-2" }, React.createElement(Lucide.Plus, { size: 14 }), "زیادکردن")
+                            );
+                        })
+                    ),
+                    Object.keys(cart).length > 0 && React.createElement('div', { className: "p-4 mx-4 mb-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl" },
+                        React.createElement('h3', { className: "text-[#ffc107] font-bold flex items-center gap-2 mb-4" }, React.createElement(Lucide.ShoppingCart, { size: 18 }), "سەبەتەکەت"),
+                        Object.values(cart).map(item => React.createElement('div', { key: item.name, className: "flex justify-between items-center text-sm bg-zinc-800/50 p-3 rounded-xl mb-3" },
+                            React.createElement('div', null, React.createElement('p', { className: "font-bold text-white" }, item.name), React.createElement('p', { className: "text-xs text-zinc-500" }, `${(item.price * item.qty).toLocaleString()} د.ع`)),
+                            React.createElement('div', { className: "flex items-center gap-3" },
+                                React.createElement('button', { onClick: () => removeFromCart(item.name), className: "p-1 text-red-500 bg-red-500/10 rounded-md" }, React.createElement(Lucide.Minus, { size: 16 })),
+                                React.createElement('span', { className: "font-bold text-white" }, item.qty),
+                                React.createElement('button', { onClick: () => addToCart({ name: item.name, price: item.price }), className: "p-1 text-green-500 bg-green-500/10 rounded-md" }, React.createElement(Lucide.Plus, { size: 16 }))
+                            )
+                        )),
+                        prizes.length > 0 && React.createElement('div', { className: "mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl" }, React.createElement('p', { className: "text-xs font-bold text-[#ffc107] mb-2" }, "🎁 خەڵاتەکانت:"), React.createElement('div', { className: "flex flex-wrap gap-2" }, prizes.map((p, i) => React.createElement('span', { key: i, className: "bg-zinc-800 text-white text-[10px] px-2 py-1 rounded-full" }, `✨ ${p}`)))),
+                        React.createElement('textarea', { className: "w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none mb-4", rows: 2, placeholder: "تێبینی یان ناونیشان بنووسە...", value: orderNote, onChange: e => setOrderNote(e.target.value) }),
+                        React.createElement('div', { className: "my-4 flex justify-between items-center" }, React.createElement('span', { className: "text-zinc-400 font-bold" }, "کۆی گشتی:"), React.createElement('span', { className: "text-2xl font-black text-white" }, `${totalAmount.toLocaleString()} د.ع`)),
+                        React.createElement('button', { onClick: handleSendOrder, disabled: isSending, className: `w-full bg-[#25D366] text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg ${isSending ? 'opacity-70 animate-pulse' : ''}` }, isSending ? '⏳ لۆکەیشن...' : '✅ ناردنی داواکاری بۆ واتسئەپ')
+                    )
+                ) : React.createElement(AdminPanel),
+                showWheel && React.createElement(LuckyWheel, { onWin: (p) => { setPrizes(prev => [...prev, p]); localStorage.setItem('boomSpinCount', '1'); localStorage.setItem('canSpinBoom', 'false'); setShowWheel(false); }, onClose: () => setShowWheel(false) })
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(React.StrictMode, null, React.createElement(App)));
+    </script>
 </body>
 </html>

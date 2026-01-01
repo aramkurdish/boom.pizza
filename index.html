@@ -17,15 +17,19 @@
         .nav-link { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 0.9rem; font-weight: bold; color: #666; }
         .nav-link.active { color: var(--primary-red); border-bottom: 3px solid var(--primary-red); background: #111; }
 
-        header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); }
+        header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); position: relative; }
         header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
 
-        /* Lucky Spin Styles */
-        .spin-section { padding: 20px; text-align: center; background: #111; border-bottom: 1px solid #222; }
-        .wheel-container { position: relative; width: 300px; margin: 0 auto; }
-        #luckyWheel { border-radius: 50%; border: 5px solid #333; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); width: 100%; max-width: 300px; }
-        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid var(--primary-red); z-index: 10; }
-        .spin-btn { background: var(--primary-red); color: white; border: none; padding: 10px 25px; border-radius: 50px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Vazirmatn'; }
+        /* --- Lucky Spin Styles --- */
+        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; justify-content: center; align-items: center; }
+        .wheel-content { position: relative; text-align: center; }
+        #luckyWheel { border-radius: 50%; border: 8px solid #333; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); width: 320px; height: 320px; }
+        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid var(--primary-red); z-index: 10; }
+        .spin-btn-main { background: var(--primary-red); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
+        .close-wheel { position: absolute; top: -50px; right: 0; color: white; font-size: 1.5rem; cursor: pointer; }
 
         .category-container { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: var(--dark-bg); }
         .cat-card { min-width: 85px; text-align: center; cursor: pointer; }
@@ -35,8 +39,6 @@
         .menu-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .item-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; border: 1px solid #222; position: relative; display: flex; flex-direction: column; }
         .item-card img { width: 100%; height: 120px; object-fit: cover; }
-        .discount-badge { position: absolute; top: 8px; left: 8px; background: var(--primary-red); color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; z-index: 5; }
-
         .item-info { padding: 10px; text-align: center; flex-grow: 1; }
         .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; margin: 10px; cursor: pointer; font-family: 'Vazirmatn'; }
 
@@ -50,6 +52,18 @@
 </head>
 <body>
 
+<button class="spin-launcher" onclick="toggleWheel(true)">🎰 چەرخی بەخت</button>
+
+<div class="wheel-overlay" id="wheelOverlay">
+    <div class="wheel-content">
+        <span class="close-wheel" onclick="toggleWheel(false)">✖</span>
+        <div class="wheel-pointer"></div>
+        <canvas id="luckyWheel" width="350" height="350"></canvas>
+        <br>
+        <button class="spin-btn-main" onclick="spinWheel()">بسوڕێنە! 🎰</button>
+    </div>
+</div>
+
 <div class="admin-nav">
     <div class="nav-link active" onclick="switchPage('main-site', this)">🏠 مێنۆ</div>
     <div class="nav-link" onclick="handleAdminAccess('orders-site', this)">📋 داواکارییەکان</div>
@@ -58,16 +72,6 @@
 
 <div id="main-site" class="page active">
     <header><h1>Boom's Pizza</h1></header>
-
-    <div class="spin-section">
-        <h3 style="color:var(--text-gold); margin-bottom:15px;">🎰 چەرخی بەخت تاقی بکەرەوە!</h3>
-        <div class="wheel-container">
-            <div class="wheel-pointer"></div>
-            <canvas id="luckyWheel" width="350" height="350"></canvas>
-        </div>
-        <button class="spin-btn" onclick="spinWheel()">بسوڕێنە!</button>
-    </div>
-
     <div class="category-container">
         <div class="cat-card active" onclick="loadFirebaseMenu('pizza', this)"><img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150"><p>پیتزا</p></div>
         <div class="cat-card" onclick="loadFirebaseMenu('burger', this)"><img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150"><p>بەرگر</p></div>
@@ -78,7 +82,7 @@
     <div id="cart-section">
         <h3 style="color:var(--text-gold);">🛒 سەبەتەکەت</h3>
         <div id="cart-items"></div>
-        <textarea id="order-note" class="order-input" rows="2" placeholder="تێبینی یان ناونیشان بنووسە..."></textarea>
+        <textarea id="order-note" class="order-input" rows="2" placeholder="تێبینی یان ناونیشان..."></textarea>
         <div style="text-align:center; margin:20px 0; font-size:1.4rem; font-weight:bold;">کۆ: <span id="total-amount">0</span> د.ع</div>
         <button class="whatsapp-btn" id="sendBtn" onclick="getLocationAndSend()">ناردنی داواکاری و لۆکەیشن ✅</button>
     </div>
@@ -89,7 +93,7 @@
         <h3>➕ زیادکردنی خواردن</h3>
         <input type="text" id="adm-name" class="order-input" placeholder="ناوی خواردن">
         <input type="number" id="adm-price" class="order-input" placeholder="نرخ">
-        <input type="number" id="adm-disc" class="order-input" placeholder="نرخی داشکان (ئەگەر هەیە)">
+        <input type="number" id="adm-disc" class="order-input" placeholder="داشکان">
         <input type="text" id="adm-img" class="order-input" placeholder="لێنکی وێنە">
         <select id="adm-cat" class="order-input">
             <option value="pizza">پیتزا</option>
@@ -118,13 +122,14 @@
     const db = firebase.database();
     let cart = [];
 
-    // --- Lucky Spin Logic ---
+    // --- Lucky Spin Setup ---
     const prizes = [
-        { label: "Prize 1", color: "#ff3131" },
-        { label: "Prize 2", color: "#161616" },
-        { label: "Prize 3", color: "#ffc107" },
-        { label: "Prize 4", color: "#25D366" }
+        { label: "داشکان %5", color: "#ff3131" },
+        { label: "داشکان %10", color: "#161616" },
+        { label: "cola", color: "#ffc107" },
+        { label: "boom-pizza", color: "#25D366" }
     ];
+
     const canvas = document.getElementById('luckyWheel');
     const ctx = canvas.getContext('2d');
     let currentRotation = 0;
@@ -149,24 +154,44 @@
         });
     }
 
+    function toggleWheel(show) {
+        document.getElementById('wheelOverlay').style.display = show ? 'flex' : 'none';
+        if(show) drawWheel();
+    }
+
     function spinWheel() {
         if (window.isSpinning) return;
         window.isSpinning = true;
-        const extraDegrees = Math.floor(Math.random() * 360);
-        const totalSpins = 8 * 360;
-        currentRotation += totalSpins + extraDegrees;
+
+        const randomNum = Math.random() * 100;
+        let targetAngle;
+
+        if (randomNum < 80) {
+            targetAngle = Math.floor(Math.random() * 90); // Prize 1 (80%)
+        } else if (randomNum < 90) {
+            targetAngle = Math.floor(Math.random() * 90) + 90; // Prize 2 (10%)
+        } else if (randomNum < 95) {
+            targetAngle = Math.floor(Math.random() * 90) + 180; // Prize 3 (5%)
+        } else {
+            targetAngle = Math.floor(Math.random() * 90) + 270; // Prize 4 (5% total remaining, close to your 1 requirement)
+        }
+
+        const stopAt = 360 - targetAngle;
+        const totalSpins = 10 * 360;
+        currentRotation += totalSpins + stopAt - (currentRotation % 360);
+        
         canvas.style.transform = `rotate(${currentRotation}deg)`;
+        
         setTimeout(() => { 
             window.isSpinning = false; 
-            alert("ئەنجامەکە دیاری کرا! پیرۆزە.");
+            const prizeIndex = Math.floor(targetAngle / 90);
+            alert("پیرۆزە! تۆ " + prizes[prizeIndex].label + " ت بردەوە.");
         }, 5000);
     }
 
-    // --- Existing Functions ---
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id === 'edit-site') fetchAdminList();
     }
 
     function handleAdminAccess(id, btn) {
@@ -178,24 +203,12 @@
         if(cart.length === 0) return alert("سەبەتە بەتاڵە!");
         const btn = document.getElementById('sendBtn');
         btn.innerText = "⏳ وەرگرتنی لۆکەیشن..."; btn.disabled = true;
-
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-                    processOrder(googleMapsUrl);
-                },
-                (err) => {
-                    alert("کێشە لە لۆکەیشن هەیە، بەبێ لۆکەیشن دەنێردرێت.");
-                    processOrder("دیاری نەکراوە");
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        } else {
-            processOrder("پشتگیری ناکرێت");
-        }
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const googleMapsUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                processOrder(googleMapsUrl);
+            }, (err) => { processOrder("دیاری نەکراوە"); }, { enableHighAccuracy: true });
+        } else { processOrder("پشتگیری ناکرێت"); }
     }
 
     function processOrder(mapUrl) {
@@ -203,12 +216,8 @@
         const note = document.getElementById('order-note').value || "نییە";
         const total = document.getElementById('total-amount').innerText;
         const items = cart.map(i => i.name).join(', ');
-        const orderData = { orderID, items, total, location: mapUrl, note, time: new Date().toLocaleString() };
-        db.ref('orders/' + orderID).set(orderData).then(() => {
-            const waMsg = `🆔 *#${orderID}*\n🍴 *خواردن:* ${items}\n💰 *کۆ:* ${total} دینار\n📝 *تێبینی:* ${note}\n📍 *شوێن:* ${mapUrl}`;
-            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(waMsg)}`;
-            document.getElementById('sendBtn').innerText = "ناردنی داواکاری و لۆکەیشن ✅";
-            document.getElementById('sendBtn').disabled = false;
+        db.ref('orders/' + orderID).set({ orderID, items, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
+            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${items}\n💰 ${total}\n📍 ${mapUrl}`)}`;
         });
     }
 
@@ -220,22 +229,18 @@
             display.innerHTML = '';
             snap.forEach(child => {
                 const item = child.val();
-                let priceHTML = `<b>${item.price.toLocaleString()} د.ع</b>`;
-                if(item.discount) {
-                    priceHTML = `<span style="text-decoration:line-through; font-size:0.8rem; color:#666;">${item.price}</span> <b>${item.discount.toLocaleString()} د.ع</b>`;
-                }
-                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3>${priceHTML}</div><button class="add-btn" onclick="addToCart('${item.name}', ${item.discount || item.price})">زیادکردن +</button></div>`;
+                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زیادکردن +</button></div>`;
             });
         });
     }
 
     function addToCart(name, price) {
         cart.push({name, price});
-        let total = 0; 
+        let total = 0; cart.forEach(i => total += i.price);
+        document.getElementById('total-amount').innerText = total.toLocaleString();
         const list = document.getElementById('cart-items');
         list.innerHTML = '';
-        cart.forEach(i => { total += i.price; list.innerHTML += `<div>${i.name} - ${i.price}</div>`; });
-        document.getElementById('total-amount').innerText = total.toLocaleString();
+        cart.forEach(i => { list.innerHTML += `<div>${i.name} - ${i.price}</div>`; });
     }
 
     function uploadItem() {
@@ -249,10 +254,7 @@
         }
     }
 
-    window.onload = () => {
-        loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
-        drawWheel();
-    };
+    window.onload = () => loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
 </script>
 </body>
 </html>

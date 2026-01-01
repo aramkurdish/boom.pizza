@@ -117,25 +117,19 @@
                 { name: 'پیزای گۆشت small', price: 4500 },
                 { name: 'پیتزا گۆشت medium', price: 5000 },
                 { name: 'پیزای گۆشت large', price: 7000 },
-                { name: 'پیتزا مریشک small', price: 4000 }
-                { name: 'پیتزا مریشک medium', price: 5000 }
-                { name: 'پیتزا مریشک large', price: 6000 }
-                { name: 'پیتزا موشەکەل', price: 4000 }
-                { name: 'پیتزا پێپەڕۆنی', price: 4000 }
+                { name: 'پیتزا مریشک small', price: 4000 },
+                { name: 'پیتزا مریشک medium', price: 5000 },
+                { name: 'پیتزا مریشک large', price: 6000 },
+                { name: 'پیتزا موشەکەل', price: 4000 },
+                { name: 'پیتزا پێپەڕۆنی', price: 4000 },
                 { name: 'بووم پیزا (شاهانە)', price: 7000 }
-
-
-
-
             ],
             'بەرگرەکان': [
                 { name: 'بووم بەرگر', price: 6000 },
                 { name: 'چیز بەرگر', price: 3000 },
-                { name: 'زینگەر بەرگر', price: 5500 }
-                { name: 'دەبڵ چیز بەرگر', price: 4000 }
-                { name: 'ەرگری قارچکر', price: 5000 }
-
-
+                { name: 'زینگەر بەرگر', price: 5500 },
+                { name: 'دەبڵ چیز بەرگر', price: 4000 },
+                { name: 'بەرگری قارچک', price: 5000 }
             ],
             'لاوەکییەکان': [
                 { name: 'فینگەر', price: 1500 },
@@ -149,12 +143,12 @@
             ]
         };
 
-        let selectedDesk = null;
+        let selectedDeskNum = null;
         let cart = [];
         let currentItem = null;
 
         function selectDesk(num, btn) {
-            selectedDesk = num;
+            selectedDeskNum = num;
             document.querySelectorAll('.table-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
@@ -232,7 +226,7 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function sendOrder() {
-            if (!selectedDesk) return alert("تکایە مێزێک هەڵبژێرە!");
+            if (!selectedDeskNum) return alert("تکایە مێزێک هەڵبژێرە!");
             if (cart.length === 0) return alert("هیچ خواردنێک هەڵنەبژێردراوە!");
 
             const itemsSummary = cart.map(i => `${i.qty}x ${i.name}${i.extra ? ' ('+i.extra+')' : ''}`).join(' + ');
@@ -242,13 +236,15 @@
                 id: Math.floor(1000 + Math.random() * 9000),
                 items: itemsSummary,
                 total: finalTotal.toLocaleString() + " د.ع",
-                phone: "ناوەوە (مێزی " + selectedDesk + ")",
+                phone: "ناوەوە (مێزی " + selectedDeskNum + ")",
                 time: new Date().toLocaleString('en-CA', { hour12: false }).replace(',', '')
             };
 
             db.ref('orders').push(orderData).then(() => {
                 alert("داواکارییەکە بە سەرکەوتوویی نێردرا!");
                 location.reload();
+            }).catch(err => {
+                alert("هەڵەیەک ڕوویدا لە ناردن: " + err.message);
             });
         }
     </script>

@@ -138,11 +138,7 @@
 
     function checkSpinAccess() {
         const canSpin = localStorage.getItem('canSpinBoom');
-        if (canSpin === 'true') {
-            document.getElementById('spinLauncherBtn').style.display = 'block';
-        } else {
-            document.getElementById('spinLauncherBtn').style.display = 'none';
-        }
+        document.getElementById('spinLauncherBtn').style.display = (canSpin === 'true') ? 'block' : 'none';
     }
 
     function drawWheel() {
@@ -166,38 +162,30 @@
 
     function spinWheel() {
         if (window.isSpinning || localStorage.getItem('canSpinBoom') !== 'true') return;
-        
         window.isSpinning = true;
         const randomNum = Math.random() * 100;
         let cumulativeProb = 0;
         let prizeIndex = 0;
-
         for (let i = 0; i < prizes.length; i++) {
             cumulativeProb += prizes[i].prob;
             if (randomNum <= cumulativeProb) { prizeIndex = i; break; }
         }
-
         const segmentDegree = 360 / prizes.length;
         const centerOfSegment = (prizeIndex * segmentDegree) + (segmentDegree / 2);
         const rotationToTarget = 270 - centerOfSegment;
         currentRotation += (10 * 360) + rotationToTarget - (currentRotation % 360);
-        
         canvas.style.transform = `rotate(${currentRotation}deg)`;
-        
         setTimeout(() => { 
             window.isSpinning = false;
-            localStorage.setItem('canSpinBoom', 'false'); // Lock it forever after 1 spin
+            localStorage.setItem('canSpinBoom', 'false');
             alert("پیرۆزە! " + prizes[prizeIndex].label);
-            setTimeout(() => { 
-                toggleWheel(false);
-                checkSpinAccess();
-            }, 1000);
+            setTimeout(() => { toggleWheel(false); checkSpinAccess(); }, 1000);
         }, 5000);
     }
 
     function addToCart(name, price) {
-        if (cart[name]) { cart[name].qty++; } 
-        else { cart[name] = { price: price, qty: 1 }; }
+        if (cart[name]) cart[name].qty++;
+        else cart[name] = { price: price, qty: 1 };
         updateCartUI();
     }
 
@@ -219,9 +207,9 @@
         btn.innerText = "⏳ وەرگرتنی لۆکەیشن..."; btn.disabled = true;
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
-                processOrder(`http://maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
+                processOrder(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
             }, () => { processOrder("دیاری نەکراوە"); }, { enableHighAccuracy: true });
-        } else { processOrder("پشتگیری ناکرێت"); }
+        } else processOrder("پشتگیری ناکرێت");
     }
 
     function processOrder(mapUrl) {
@@ -229,10 +217,9 @@
         const note = document.getElementById('order-note').value || "نییە";
         const total = document.getElementById('total-amount').innerText;
         let itemsStr = "";
-        for (const name in cart) { itemsStr += `${cart[name].qty}x ${name}, `; }
-
+        for (const name in cart) itemsStr += `${cart[name].qty}x ${name}, `;
         db.ref('orders/' + orderID).set({ orderID, items: itemsStr, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
-            localStorage.setItem('canSpinBoom', 'true'); // Unlock spin after successful order
+            localStorage.setItem('canSpinBoom', 'true');
             checkSpinAccess();
             window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${itemsStr}\n💰 ${total}\n📍 ${mapUrl}`)}`;
         });
@@ -251,22 +238,53 @@
         });
     }
 
+    function fetchAdminList() {
+        db.ref('menu_items').on('value', snap => {
+            const list = document.getElementById('admin-items-list');
+            list.innerHTML = '<h3>📦 بەڕێوەبردنی خواردنەکان</h3>';
+            snap.forEach(child => {
+                const item = child.val();
+                list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;"><span>${item.name} (${item.price})</span><button onclick="deleteItem('${child.key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">سڕینەوە</button></div>`;
+            });
+        });
+    }
+
+    function deleteItem(key) { if(confirm("بڕیاری؟")) db.ref('menu_items').child(key).remove(); }
+
+    function uploadItem() {
+        const name = document.getElementById('adm-name').value, price = parseInt(document.getElementById('adm-price').value), disc = document.getElementById('adm-disc').value, img = document.getElementById('adm-img').value, cat = document.getElementById('adm-cat').value;
+        if(name && price) db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat}).then(()=>alert("زیاد کرا"));
+    }
+
     function handleAdminAccess(id, btn) {
         if(prompt("پاسوۆرد:") === "1998a") {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            switchPage(id, btn);
+            if(id === 'orders-site') fetchOrders();
+            if(id === 'edit-site') fetchAdminList();
         } else alert("هەڵەیە!");
     }
 
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        if(btn) btn.classList.add('active');
     }
 
-    window.onload = () => {
-        loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
-        checkSpinAccess();
-    };
+    function fetchOrders() {
+        db.ref('orders').on('value', snap => {
+            const div = document.getElementById('firebase-orders');
+            div.innerHTML = '<h3>📥 داواکارییە نوێیەکان</h3>';
+            snap.forEach(child => {
+                const o = child.val();
+                div.innerHTML += `<div style="background:#111; padding:15px; border:1px solid #333; border-radius:15px; margin-bottom:10px;"><p>🆔 #${o.orderID}</p><p>🍴 ${o.items}</p><p>💰 ${o.total}</p><p>📍 <a href="${o.location}" style="color:cyan;">بینینی شوێن</a></p><p>📝 ${o.note}</p><button onclick="deleteOrder('${child.key}')" style="background:gray; border:none; color:white; padding:5px; border-radius:5px;">Archive</button></div>`;
+            });
+        });
+    }
+
+    function deleteOrder(key) { db.ref('orders').child(key).remove(); }
+
+    window.onload = () => { loadFirebaseMenu('pizza', document.querySelector('.cat-card')); checkSpinAccess(); };
 </script>
 </body>
 </html>

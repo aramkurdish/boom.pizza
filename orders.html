@@ -3,35 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لیستی داواکارییەکان - بوم پیتزا</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
-    
+    <title>لیستی داواکارییەکان</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-
     <style>
-        body { font-family: 'Vazirmatn', sans-serif; background-color: #0d0d0d; color: white; padding: 15px; margin: 0; }
-        .header { text-align: center; padding: 15px; border-bottom: 2px solid #ff3131; margin-bottom: 20px; position: sticky; top: 0; background: #0d0d0d; z-index: 100; }
-        .order-card { background: #1a1a1a; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-right: 5px solid #ff3131; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-        .order-id { color: #ffc107; font-weight: bold; font-size: 1.1rem; }
-        .time { font-size: 0.75rem; color: #888; float: left; }
-        .items { margin: 10px 0; font-size: 0.95rem; color: #eee; }
-        .info-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 10px; margin-top: 10px; }
-        .phone { color: #25D366; font-weight: bold; text-decoration: none; }
-        .total { background: #ff3131; padding: 2px 10px; border-radius: 6px; font-weight: bold; }
-        .note { background: #222; padding: 8px; border-radius: 6px; font-size: 0.85rem; color: #ffc107; margin-top: 8px; border: 1px dashed #444; }
+        body { font-family: sans-serif; background-color: #0d0d0d; color: white; padding: 20px; direction: rtl; }
+        .card { background: #1a1a1a; padding: 15px; margin-bottom: 10px; border-radius: 10px; border-right: 5px solid red; }
+        h2 { color: red; text-align: center; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h2 style="margin: 0; color: #ff3131;">📋 داواکارییە نوێیەکان</h2>
-    </div>
-
-    <div id="orders-display">چاوەڕێی داتاکان بکە...</div>
+    <h2>📦 داواکارییەکان</h2>
+    <div id="list">چاوەڕوان بە...</div>
 
     <script>
-        // زانیارییەکانت لە وێنەی سێیەمەوە وەرگیراوە
         const firebaseConfig = {
             apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
             authDomain: "boompizza-5d048.firebaseapp.com",
@@ -41,35 +26,24 @@
             messagingSenderId: "636068289590",
             appId: "1:636068289590:web:41fe758906140c700ecc97"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // نیشاندانی داواکارییەکان بە شێوەی زیندوو
         db.ref('orders').on('value', (snapshot) => {
-            const display = document.getElementById('orders-display');
-            display.innerHTML = '';
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = '';
             const data = snapshot.val();
-
             if (data) {
                 Object.keys(data).reverse().forEach(key => {
                     const o = data[key];
-                    display.innerHTML += `
-                        <div class="order-card">
-                            <span class="time">${o.time || 'ئێستا'}</span>
-                            <div class="order-id">🆔 #${o.id}</div>
-                            <div class="items">🍕 ${Array.isArray(o.items) ? o.items.join(' + ') : o.items}</div>
-                            ${o.note && o.note !== 'نییە' ? `<div class="note">📝 ${o.note}</div>` : ''}
-                            <div class="info-row">
-                                <a href="tel:${o.phone}" class="phone">📞 ${o.phone}</a>
-                                <span class="total">${o.total} د.ع</span>
-                            </div>
-                        </div>
-                    `;
+                    listDiv.innerHTML += `
+                        <div class="card">
+                            <p>🆔 #${o.id} - ⏰ ${o.time || ''}</p>
+                            <p>🍴 ${o.items}</p>
+                            <p>📞 ${o.phone} | 💰 ${o.total} د.ع</p>
+                        </div>`;
                 });
-            } else {
-                display.innerHTML = '<p style="text-align:center; color:#666;">هیچ داواکارییەک نییە</p>';
-            }
+            } else { listDiv.innerHTML = 'هیچ داواکارییەک نییە.'; }
         });
     </script>
 </body>

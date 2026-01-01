@@ -42,13 +42,6 @@
         .lucky-wheel-canvas {
             filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
         }
-        .receipt-pattern {
-            background-color: #ffffff;
-            background-image:  linear-gradient(135deg, #f5f5f5 25%, transparent 25%), linear-gradient(225deg, #f5f5f5 25%, transparent 25%), linear-gradient(45deg, #f5f5f5 25%, transparent 25%), linear-gradient(315deg, #f5f5f5 25%, #ffffff 25%);
-            background-position:  10px 0, 10px 0, 0 0, 0 0;
-            background-size:  20px 20px;
-            background-repeat: repeat;
-        }
     </style>
     <script type="importmap">
     {
@@ -103,14 +96,11 @@
                 <div className="fixed inset-0 z-[7000] bg-black/95 flex items-center justify-center p-4">
                     <div className="bg-white text-black w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center p-6 relative">
                         <div className="absolute top-0 left-0 w-full h-2 bg-[#ff3131]"></div>
-                        
                         <div className="bg-green-100 text-green-600 p-3 rounded-full mb-4">
                             <${Icon} name="CheckCircle" size=${32} />
                         </div>
-                        
                         <h2 className="text-2xl font-black mb-1">وەسڵی دیجیتاڵی</h2>
                         <p className="text-gray-500 text-sm mb-6">سوپاس بۆ متمانەکەت!</p>
-                        
                         <div className="w-full border-t border-dashed border-gray-300 py-4 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">کۆدی داواکاری:</span>
@@ -129,7 +119,6 @@
                                 <span className="text-2xl font-black text-[#ff3131]">${order.total} د.ع</span>
                             </div>
                         </div>
-
                         <div className="w-full mt-6 space-y-3">
                             <button 
                                 onClick=${() => {
@@ -140,41 +129,32 @@
                             >
                                 <${Icon} name="MessageCircle" size=${18} /> ناردنی کۆتایی بۆ واتسئەپ
                             </button>
-                            <button 
-                                onClick=${onClose}
-                                className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl"
-                            >
-                                گەڕانەوە بۆ مێنۆ
-                            </button>
+                            <button onClick=${onClose} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">گەڕانەوە بۆ مێنۆ</button>
                         </div>
                     </div>
                 </div>
             `;
         };
 
-        const LuckyWheel = ({ onWin, onClose }) => {
+        const LuckyWheel = ({ onWin, onClose, prizes }) => {
             const [isSpinning, setIsSpinning] = useState(false);
             const canvasRef = useRef(null);
             const [rotation, setRotation] = useState(0);
 
-            const PRIZES = useMemo(() => [
-                { label: "%5 داشکان", color: "#ff3131", prob: 60 },
-                { label: "کۆلای بەلاش", color: "#ffc107", prob: 20 },
-                { label: "%10 داشکان", color: "#161616", prob: 10 },
-                { label: "بوم پیتزا", color: "#25D366", prob: 5 },
-                { label: "دیاری تایبەت", color: "#444444", prob: 5 }
-            ], []);
+            const activePrizes = useMemo(() => prizes && prizes.length > 0 ? prizes : [
+                { label: "%5 داشکان", color: "#ff3131", prob: 100 }
+            ], [prizes]);
 
             useEffect(() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
-                const arc = (2 * Math.PI) / PRIZES.length;
+                const arc = (2 * Math.PI) / activePrizes.length;
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                PRIZES.forEach((p, i) => {
+                activePrizes.forEach((p, i) => {
                     ctx.beginPath();
-                    ctx.fillStyle = p.color;
+                    ctx.fillStyle = p.color || "#444";
                     ctx.moveTo(175, 175);
                     ctx.arc(175, 175, 170, i * arc, (i + 1) * arc);
                     ctx.fill();
@@ -191,24 +171,25 @@
                     ctx.fillText(p.label, 150, 5);
                     ctx.restore();
                 });
-            }, [PRIZES]);
+            }, [activePrizes]);
 
             const spin = () => {
                 if (isSpinning) return;
                 setIsSpinning(true);
 
-                const rand = Math.random() * 100;
+                const totalProb = activePrizes.reduce((acc, p) => acc + Number(p.prob), 0);
+                const rand = Math.random() * totalProb;
                 let cumulative = 0;
                 let winnerIndex = 0;
-                for (let i = 0; i < PRIZES.length; i++) {
-                    cumulative += PRIZES[i].prob;
+                for (let i = 0; i < activePrizes.length; i++) {
+                    cumulative += Number(activePrizes[i].prob);
                     if (rand <= cumulative) {
                         winnerIndex = i;
                         break;
                     }
                 }
 
-                const degPerSlice = 360 / PRIZES.length;
+                const degPerSlice = 360 / activePrizes.length;
                 const targetAngle = 270 - (winnerIndex * degPerSlice + degPerSlice / 2);
                 const extraSpins = 10 * 360;
                 const newRotation = rotation + extraSpins + (targetAngle - (rotation % 360));
@@ -217,7 +198,7 @@
 
                 setTimeout(() => {
                     setIsSpinning(false);
-                    onWin(PRIZES[winnerIndex].label);
+                    onWin(activePrizes[winnerIndex].label);
                 }, 5000);
             };
 
@@ -234,23 +215,23 @@
                             style=${{ transitionTimingFunction: 'cubic-bezier(0.15, 0, 0.15, 1)', transform: `rotate(${rotation}deg)` }}
                         />
                     </div>
-                    <button
-                        onClick=${spin}
-                        disabled=${isSpinning}
-                        className=${`px-12 py-4 rounded-full font-bold text-xl text-white transition-all ${isSpinning ? 'bg-gray-600' : 'bg-[#ff3131] hover:scale-110 shadow-lg shadow-red-500/20'}`}
-                    >
+                    <button onClick=${spin} disabled=${isSpinning} className=${`px-12 py-4 rounded-full font-bold text-xl text-white transition-all ${isSpinning ? 'bg-gray-600' : 'bg-[#ff3131] hover:scale-110 shadow-lg shadow-red-500/20'}`}>
                         ${isSpinning ? 'دەسوڕێتەوە...' : 'بسوڕێنە! 🎰'}
                     </button>
-                    <p className="mt-6 text-gray-400 text-sm">بەختی خۆت تاقی بکەرەوە بۆ بەدەستهێنانی خەڵاتی شایستە!</p>
+                    <p className="mt-6 text-gray-400 text-sm text-center">بەختی خۆت تاقی بکەرەوە بۆ بەدەستهێنانی خەڵاتی شایستە!</p>
                 </div>
             `;
         };
 
-        const AdminPanel = () => {
+        const AdminPanel = ({ categories, wheelPrizes }) => {
             const [activeTab, setActiveTab] = useState('orders');
             const [menuItems, setMenuItems] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [editingItem, setEditingItem] = useState({ name: '', price: 0, discount: 0, img: '', category: 'pizza' });
+            
+            // Edit forms states
+            const [editingItem, setEditingItem] = useState({ name: '', price: 0, discount: 0, img: '', category: categories[0]?.id || '' });
+            const [editingCategory, setEditingCategory] = useState({ id: '', name: '', img: '' });
+            const [editingPrize, setEditingPrize] = useState({ label: '', color: '#ff3131', prob: 20 });
 
             useEffect(() => {
                 const unsubMenu = onValue(ref(db, 'menu_items'), (snapshot) => {
@@ -265,93 +246,137 @@
                 return () => { unsubMenu(); unsubOrders(); };
             }, []);
 
-            const handleSaveItem = async (e) => {
+            const saveItem = async (e) => {
                 e.preventDefault();
-                if (!editingItem.name || !editingItem.price) return alert("تکایە هەموو خانەکان پڕبکەرەوە");
-                try {
-                    if (editingItem.id) {
-                        const { id, ...data } = editingItem;
-                        await update(ref(db, `menu_items/${id}`), data);
-                    } else {
-                        await push(ref(db, 'menu_items'), editingItem);
-                    }
-                    setEditingItem({ name: '', price: 0, discount: 0, img: '', category: 'pizza' });
-                } catch (err) {
-                    alert("هەڵە ڕوویدا لە پاشەکەوتکردن");
-                }
+                if (!editingItem.name || !editingItem.price) return alert("خانەکان پڕبکەرەوە");
+                editingItem.id ? await update(ref(db, `menu_items/${editingItem.id}`), editingItem) : await push(ref(db, 'menu_items'), editingItem);
+                setEditingItem({ name: '', price: 0, discount: 0, img: '', category: categories[0]?.id || '' });
+            };
+
+            const saveCategory = async (e) => {
+                e.preventDefault();
+                if (!editingCategory.id || !editingCategory.name) return alert("ID و ناو پێویستە");
+                await set(ref(db, `categories/${editingCategory.id}`), { name: editingCategory.name, img: editingCategory.img });
+                setEditingCategory({ id: '', name: '', img: '' });
+            };
+
+            const savePrize = async (e) => {
+                e.preventDefault();
+                if (!editingPrize.label) return alert("ناو پێویستە");
+                editingPrize.id ? await update(ref(db, `prizes/${editingPrize.id}`), editingPrize) : await push(ref(db, 'prizes'), editingPrize);
+                setEditingPrize({ label: '', color: '#ff3131', prob: 20 });
+            };
+
+            const deleteEntry = async (path, id) => {
+                if(confirm("دڵنیای لە سڕینەوە؟")) await remove(ref(db, `${path}/${id}`));
             };
 
             return html`
                 <div className="p-4 max-w-5xl mx-auto pb-24">
-                    <div className="flex gap-4 mb-8 bg-zinc-900 p-2 rounded-xl border border-zinc-800">
-                        <button onClick=${() => setActiveTab('orders')} className=${`flex-1 py-3 rounded-lg font-bold transition-all ${activeTab === 'orders' ? 'bg-[#ff3131] text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-800'}`}>📥 داواکارییەکان (${orders.length})</button>
-                        <button onClick=${() => setActiveTab('items')} className=${`flex-1 py-3 rounded-lg font-bold transition-all ${activeTab === 'items' ? 'bg-[#ff3131] text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-800'}`}>⚙️ دەستکاری مێنۆ</button>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8 bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+                        ${['orders', 'items', 'categories', 'wheel'].map(tab => html`
+                            <button onClick=${() => setActiveTab(tab)} className=${`py-2 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? 'bg-[#ff3131] text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-800'}`}>
+                                ${tab === 'orders' ? 'داواکاری' : tab === 'items' ? 'خواردن' : tab === 'categories' ? 'کاتیگۆری' : '🎰 چەرخ'}
+                            </button>
+                        `)}
                     </div>
 
-                    ${activeTab === 'orders' ? html`
+                    ${activeTab === 'orders' && html`
                         <div className="space-y-4">
-                            <h2 className="text-2xl font-bold mb-4 text-[#ffc107]">لیستی داواکارییەکان</h2>
-                            ${orders.length === 0 ? html`<div className="text-center py-20 text-zinc-500">هیچ داواکارییەک نییە</div>` :
+                            <h2 className="text-xl font-bold mb-4 text-[#ffc107]">📥 داواکارییەکان</h2>
+                            ${orders.length === 0 ? html`<div className="text-center py-20 text-zinc-500">داواکاری نییە</div>` :
                             orders.map(o => html`
-                                <div key=${o.id} className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-xl mb-4">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <span className="text-[#ff3131] font-bold text-lg ml-2">🆔 #${o.orderID}</span>
-                                            <span className="text-zinc-500 text-sm">⏰ ${o.time}</span>
-                                        </div>
-                                        <button onClick=${() => remove(ref(db, `orders/${o.id}`))} className="p-2 text-zinc-500 hover:text-green-500 transition-colors">
-                                            <${Icon} name="CheckCircle" size=${24} />
-                                        </button>
+                                <div key=${o.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl mb-4 shadow-xl">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="text-xs text-zinc-500">ID: #${o.orderID} • ${o.time}</div>
+                                        <button onClick=${() => remove(ref(db, `orders/${o.id}`))} className="text-green-500"><${Icon} name="CheckCircle" size=${22} /></button>
                                     </div>
-                                    <div className="space-y-2 text-zinc-300">
-                                        <p><span className="text-zinc-500 font-bold ml-1">خواردنەکان:</span> <span className="text-white">${o.items}</span></p>
-                                        <p><span className="text-zinc-500 font-bold ml-1">کۆی گشتی:</span> <span className="text-[#ffc107] font-bold">${o.total} د.ع</span></p>
-                                        <p><span className="text-zinc-500 font-bold ml-1">تێبینی:</span> <span>${o.note || "نییە"}</span></p>
-                                    </div>
-                                    <div className="mt-6">
-                                        <a href=${o.location} target="_blank" className="flex bg-blue-600/20 text-blue-400 border border-blue-600/30 py-3 rounded-xl items-center justify-center gap-2 font-bold hover:bg-blue-600/30 transition-all">
-                                            <${Icon} name="ExternalLink" size=${18} /> بینینی لۆکەیشن
-                                        </a>
-                                    </div>
+                                    <div className="text-sm font-bold text-white mb-2">${o.items}</div>
+                                    <div className="text-lg font-black text-[#ffc107]">${o.total} د.ع</div>
+                                    <div className="text-xs text-zinc-400 mt-2 italic">${o.note || "بەبێ تێبینی"}</div>
+                                    <a href=${o.location} target="_blank" className="mt-4 flex bg-blue-600/20 text-blue-400 border border-blue-600/30 py-2 rounded-lg items-center justify-center gap-2 text-xs font-bold">
+                                        <${Icon} name="MapPin" size=${14} /> بینینی لۆکەیشن
+                                    </a>
                                 </div>
                             `)}
                         </div>
-                    ` : html`
-                        <div className="space-y-8">
-                            <form onSubmit=${handleSaveItem} className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 space-y-4">
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <${Icon} name=${editingItem.id ? 'Edit' : 'Plus'} size=${20} />
-                                    ${editingItem.id ? 'دەستکاری خواردن' : 'زیادکردنی خواردنی نوێ'}
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input type="text" placeholder="ناوی خواردن" className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]" value=${editingItem.name} onChange=${e => setEditingItem({ ...editingItem, name: e.target.value })} />
-                                    <input type="number" placeholder="نرخ" className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]" value=${editingItem.price || ''} onChange=${e => setEditingItem({ ...editingItem, price: parseInt(e.target.value) })} />
-                                    <input type="number" placeholder="داشکان" className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]" value=${editingItem.discount || ''} onChange=${e => setEditingItem({ ...editingItem, discount: parseInt(e.target.value) })} />
-                                    <select className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131]" value=${editingItem.category} onChange=${e => setEditingItem({ ...editingItem, category: e.target.value })}>
-                                        ${['pizza', 'burger', 'shawarma', 'finger', 'drink'].map(c => html`<option key=${c} value=${c}>${c}</option>`)}
-                                    </select>
-                                    <input type="text" placeholder="لێنکی وێنە" className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white outline-none focus:border-[#ff3131] md:col-span-2" value=${editingItem.img} onChange=${e => setEditingItem({ ...editingItem, img: e.target.value })} />
-                                </div>
-                                <button className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
-                                    ${editingItem.id ? 'پاشەکەوتکردنی گۆڕانکارییەکان' : 'زیادکردنی خواردن'}
-                                </button>
-                                ${editingItem.id && html`<button type="button" onClick=${() => setEditingItem({ name: '', price: 0, discount: 0, img: '', category: 'pizza' })} className="w-full bg-zinc-800 text-zinc-400 py-2 rounded-xl">لابردن</button>`}
-                            </form>
+                    `}
 
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold text-white">بەڕێوەبردن (${menuItems.length})</h2>
+                    ${activeTab === 'items' && html`
+                        <div className="space-y-8">
+                            <form onSubmit=${saveItem} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
+                                <h3 className="font-bold text-white">${editingItem.id ? 'دەستکاری خواردن' : 'زیادکردنی خواردن'}</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" placeholder="ناو" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingItem.name} onChange=${e => setEditingItem({...editingItem, name: e.target.value})} />
+                                    <input type="number" placeholder="نرخ" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingItem.price || ''} onChange=${e => setEditingItem({...editingItem, price: parseInt(e.target.value)})} />
+                                    <input type="number" placeholder="داشکان" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingItem.discount || ''} onChange=${e => setEditingItem({...editingItem, discount: parseInt(e.target.value)})} />
+                                    <select className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingItem.category} onChange=${e => setEditingItem({...editingItem, category: e.target.value})}>
+                                        ${categories.map(c => html`<option value=${c.id}>${c.name}</option>`)}
+                                    </select>
+                                    <input type="text" placeholder="وێنە" className="bg-zinc-800 border-none p-2 rounded text-xs col-span-2" value=${editingItem.img} onChange=${e => setEditingItem({...editingItem, img: e.target.value})} />
+                                </div>
+                                <button className="w-full bg-green-600 text-white font-bold py-2 rounded text-xs">پاشەکەوت</button>
+                            </form>
+                            <div className="space-y-2">
                                 ${menuItems.map(item => html`
-                                    <div key=${item.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center justify-between mb-2 shadow-md">
-                                        <div className="flex items-center gap-4">
-                                            <img src=${item.img || 'https://via.placeholder.com/150'} className="w-12 h-12 rounded-full object-cover border border-zinc-700" />
-                                            <div>
-                                                <h4 className="font-bold text-white">${item.name}</h4>
-                                                <p className="text-xs text-zinc-500">${item.price} د.ع - ${item.category}</p>
-                                            </div>
+                                    <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex items-center justify-between">
+                                        <span className="text-xs font-bold">${item.name} (${item.category})</span>
+                                        <div className="flex gap-2">
+                                            <button onClick=${() => setEditingItem(item)} className="text-blue-400"><${Icon} name="Edit" size=${16} /></button>
+                                            <button onClick=${() => deleteEntry('menu_items', item.id)} className="text-red-500"><${Icon} name="Trash2" size=${16} /></button>
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        </div>
+                    `}
+
+                    ${activeTab === 'categories' && html`
+                        <div className="space-y-8">
+                            <form onSubmit=${saveCategory} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
+                                <h3 className="font-bold text-white">بەڕێوەبردنی کاتیگۆری</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" placeholder="ID (ئینگلیزی)" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingCategory.id} onChange=${e => setEditingCategory({...editingCategory, id: e.target.value})} />
+                                    <input type="text" placeholder="ناو (کوردی)" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingCategory.name} onChange=${e => setEditingCategory({...editingCategory, name: e.target.value})} />
+                                    <input type="text" placeholder="وێنە" className="bg-zinc-800 border-none p-2 rounded text-xs col-span-2" value=${editingCategory.img} onChange=${e => setEditingCategory({...editingCategory, img: e.target.value})} />
+                                </div>
+                                <button className="w-full bg-green-600 text-white font-bold py-2 rounded text-xs">پاشەکەوت</button>
+                            </form>
+                            <div className="space-y-2">
+                                ${categories.map(c => html`
+                                    <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex items-center justify-between">
+                                        <span className="text-xs font-bold">${c.name} (${c.id})</span>
+                                        <div className="flex gap-2">
+                                            <button onClick=${() => setEditingCategory({id: c.id, ...c})} className="text-blue-400"><${Icon} name="Edit" size=${16} /></button>
+                                            <button onClick=${() => deleteEntry('categories', c.id)} className="text-red-500"><${Icon} name="Trash2" size=${16} /></button>
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        </div>
+                    `}
+
+                    ${activeTab === 'wheel' && html`
+                        <div className="space-y-8">
+                            <form onSubmit=${savePrize} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
+                                <h3 className="font-bold text-white">بەڕێوەبردنی خەڵاتەکان</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" placeholder="ناوی خەڵات" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingPrize.label} onChange=${e => setEditingPrize({...editingPrize, label: e.target.value})} />
+                                    <input type="number" placeholder="ڕێژەی بردنەوە (1-100)" className="bg-zinc-800 border-none p-2 rounded text-xs" value=${editingPrize.prob} onChange=${e => setEditingPrize({...editingPrize, prob: e.target.value})} />
+                                    <input type="color" className="bg-zinc-800 border-none h-10 w-full rounded p-1" value=${editingPrize.color} onChange=${e => setEditingPrize({...editingPrize, color: e.target.value})} />
+                                </div>
+                                <button className="w-full bg-green-600 text-white font-bold py-2 rounded text-xs">پاشەکەوت</button>
+                            </form>
+                            <div className="space-y-2">
+                                ${wheelPrizes.map(p => html`
+                                    <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div style=${{ backgroundColor: p.color }} className="w-4 h-4 rounded-full border border-zinc-700"></div>
+                                            <span className="text-xs font-bold">${p.label} (${p.prob}%)</span>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick=${() => { setEditingItem(item); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg"><${Icon} name="Edit" size=${20} /></button>
-                                            <button onClick=${() => remove(ref(db, `menu_items/${item.id}`))} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg"><${Icon} name="Trash2" size=${20} /></button>
+                                            <button onClick=${() => setEditingPrize(p)} className="text-blue-400"><${Icon} name="Edit" size=${16} /></button>
+                                            <button onClick=${() => deleteEntry('prizes', p.id)} className="text-red-500"><${Icon} name="Trash2" size=${16} /></button>
                                         </div>
                                     </div>
                                 `)}
@@ -364,24 +389,33 @@
 
         const App = () => {
             const [view, setView] = useState('menu');
-            const [activeCategory, setActiveCategory] = useState('pizza');
+            const [activeCategory, setActiveCategory] = useState('');
             const [menuItems, setMenuItems] = useState([]);
+            const [categories, setCategories] = useState([]);
+            const [wheelPrizes, setWheelPrizes] = useState([]);
             const [cart, setCart] = useState({});
             const [showWheel, setShowWheel] = useState(false);
-            const [prizes, setPrizes] = useState([]);
+            const [prizesWon, setPrizesWon] = useState([]);
             const [orderNote, setOrderNote] = useState('');
             const [isSending, setIsSending] = useState(false);
             const [lastOrder, setLastOrder] = useState(null);
 
-            const CATEGORIES = useMemo(() => [
-                { id: 'pizza', name: 'پیتزا', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150' },
-                { id: 'burger', name: 'بەرگر', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150' },
-                { id: 'shawarma', name: 'شاوەرمە', img: 'https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg' },
-                { id: 'finger', name: 'پەنجەکان', img: 'https://i.postimg.cc/FHWp2K1z/fried-chicken-fingers.jpg' },
-                { id: 'drink', name: 'خواردنەوە', img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150' }
-            ], []);
+            useEffect(() => {
+                const unsubCats = onValue(ref(db, 'categories'), (snap) => {
+                    const data = snap.val();
+                    const list = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
+                    setCategories(list);
+                    if (list.length > 0 && !activeCategory) setActiveCategory(list[0].id);
+                });
+                const unsubPrizes = onValue(ref(db, 'prizes'), (snap) => {
+                    const data = snap.val();
+                    setWheelPrizes(data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : []);
+                });
+                return () => { unsubCats(); unsubPrizes(); };
+            }, []);
 
             useEffect(() => {
+                if (!activeCategory) return;
                 const unsub = onValue(query(ref(db, 'menu_items'), orderByChild('category'), equalTo(activeCategory)), (snapshot) => {
                     const data = snapshot.val();
                     setMenuItems(data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : []);
@@ -419,43 +453,27 @@
             const handleSendOrder = async () => {
                 if (Object.keys(cart).length === 0) return alert("سەبەتەکەت بەتاڵە!");
                 setIsSending(true);
-
-                // Geolocation is MANDATORY now
                 const pos = await new Promise(resolve => navigator.geolocation.getCurrentPosition(
                     p => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
-                    () => resolve(null), 
-                    { timeout: 8000, enableHighAccuracy: true }
+                    () => resolve(null), { timeout: 8000, enableHighAccuracy: true }
                 ));
-
                 if (!pos) {
                     alert("تکایە لۆکەیشنەکەت چالاک بکە! داواکاری بەبێ لۆکەیشن نانێردرێت.");
                     setIsSending(false);
                     return;
                 }
-
                 const orderID = Math.floor(1000 + Math.random() * 9000);
                 const itemsStr = Object.values(cart).map(i => `${i.qty}x ${i.name}`).join(", ");
-                const prizeStr = prizes.length > 0 ? ` | 🎁 خەڵات: ${prizes.join(", ")}` : "";
-                const orderData = { 
-                    orderID, 
-                    items: itemsStr + prizeStr, 
-                    total: totalAmount.toLocaleString(), 
-                    location: pos, 
-                    note: orderNote, 
-                    time: new Date().toLocaleString('ku-IQ') 
-                };
-
+                const prizeStr = prizesWon.length > 0 ? ` | 🎁 خەڵات: ${prizesWon.join(", ")}` : "";
+                const orderData = { orderID, items: itemsStr + prizeStr, total: totalAmount.toLocaleString(), location: pos, note: orderNote, time: new Date().toLocaleString('ku-IQ') };
                 try {
                     await set(ref(db, `orders/${orderID}`), orderData);
                     localStorage.setItem('canSpinBoom', 'true');
-                    setLastOrder(orderData); // Trigger Digital Receipt Modal
-                    setCart({}); // Clear cart
+                    setLastOrder(orderData);
+                    setCart({});
                     setOrderNote('');
                     setIsSending(false);
-                } catch { 
-                    alert("هەڵە ڕوویدا لە پاشەکەوتکردنی داواکاری"); 
-                    setIsSending(false); 
-                }
+                } catch { alert("هەڵە ڕوویدا"); setIsSending(false); }
             };
 
             return html`
@@ -465,11 +483,7 @@
                             <${Icon} name="LayoutGrid" size=${20} />
                             <span className="text-[10px] font-bold">مێنۆ</span>
                         </button>
-                        <button onClick=${() => handleAdminAccess('admin_orders')} className=${`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'admin_orders' ? 'text-[#ff3131]' : 'text-zinc-500'}`}>
-                            <${Icon} name="ClipboardList" size=${20} />
-                            <span className="text-[10px] font-bold">داواکارییەکان</span>
-                        </button>
-                        <button onClick=${() => handleAdminAccess('admin_items')} className=${`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'admin_items' ? 'text-[#ff3131]' : 'text-zinc-500'}`}>
+                        <button onClick=${() => handleAdminAccess('admin')} className=${`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${view === 'admin' ? 'text-[#ff3131]' : 'text-zinc-500'}`}>
                             <${Icon} name="Settings" size=${20} />
                             <span className="text-[10px] font-bold">دەستکاری</span>
                         </button>
@@ -488,10 +502,10 @@
                             ${canSpin && html`<button onClick=${() => setShowWheel(true)} className="fixed bottom-28 left-4 z-40 bg-[#ffc107] text-black px-4 py-2 rounded-full font-bold shadow-xl animate-pulse-gold border-2 border-white/20">🎰 چەرخی بەخت</button>`}
                             
                             <div className="flex overflow-x-auto p-4 gap-4 no-scrollbar bg-zinc-900/50">
-                                ${CATEGORIES.map(cat => html`
+                                ${categories.map(cat => html`
                                     <button key=${cat.id} onClick=${() => setActiveCategory(cat.id)} className=${`flex flex-col items-center min-w-[80px] transition-transform active:scale-90 ${activeCategory === cat.id ? 'scale-110' : 'opacity-60'}`}>
                                         <div className=${`w-16 h-16 rounded-full overflow-hidden border-2 mb-2 ${activeCategory === cat.id ? 'border-[#ff3131] shadow-[0_0_15px_rgba(255,49,49,0.5)]' : 'border-zinc-700'}`}>
-                                            <img src=${cat.img} className="w-full h-full object-cover" />
+                                            <img src=${cat.img || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
                                         </div>
                                         <span className=${`text-xs font-bold ${activeCategory === cat.id ? 'text-[#ff3131]' : 'text-zinc-400'}`}>${cat.name}</span>
                                     </button>
@@ -504,7 +518,7 @@
                                     return html`
                                         <div key=${item.id} className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col shadow-lg">
                                             <div className="relative h-32 overflow-hidden">
-                                                <img src=${item.img || 'https://via.placeholder.com/150'} className="w-full h-full object-cover transition-transform hover:scale-110 duration-500" />
+                                                <img src=${item.img || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
                                                 ${item.discount > 0 && html`<span className="absolute top-2 right-2 bg-[#ff3131] text-white text-[10px] px-2 py-1 rounded-full font-bold">داشکان!</span>`}
                                             </div>
                                             <div className="p-3 text-center flex-grow">
@@ -513,12 +527,10 @@
                                                     ${item.discount > 0 ? html`
                                                         <span className="text-zinc-500 line-through text-[10px]">${item.price.toLocaleString()}</span>
                                                         <span className="text-[#ff3131] font-bold text-sm">${finalPrice.toLocaleString()} د.ع</span>
-                                                    ` : html`
-                                                        <span className="text-white font-bold text-sm">${item.price.toLocaleString()} د.ع</span>
-                                                    `}
+                                                    ` : html`<span className="text-white font-bold text-sm">${item.price.toLocaleString()} د.ع</span>`}
                                                 </div>
                                             </div>
-                                            <button onClick=${() => addToCart(item)} className="w-full bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs flex items-center justify-center gap-2">
+                                            <button onClick=${() => addToCart(item)} className="w-full bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
                                                 <${Icon} name="Plus" size=${14} /> زیادکردن
                                             </button>
                                         </div>
@@ -528,9 +540,7 @@
 
                             ${Object.keys(cart).length > 0 && html`
                                 <div className="p-4 mx-4 mb-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
-                                    <h3 className="text-[#ffc107] font-bold flex items-center gap-2 mb-4">
-                                        <${Icon} name="ShoppingCart" size=${18} /> سەبەتەکەت (${Object.values(cart).length})
-                                    </h3>
+                                    <h3 className="text-[#ffc107] font-bold flex items-center gap-2 mb-4"><${Icon} name="ShoppingCart" size=${18} /> سەبەتەکەت</h3>
                                     ${Object.values(cart).map(item => html`
                                         <div key=${item.name} className="flex justify-between items-center text-sm bg-zinc-800/50 p-3 rounded-xl mb-3 border border-zinc-700">
                                             <div>
@@ -539,63 +549,27 @@
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <button onClick=${() => removeFromCart(item.name)} className="p-1 text-red-500 bg-red-500/10 rounded-md"><${Icon} name="Minus" size=${16} /></button>
-                                                <span className="font-bold text-white w-4 text-center">${item.qty}</span>
+                                                <span className="font-bold text-white">${item.qty}</span>
                                                 <button onClick=${() => addToCart({ name: item.name, price: item.price })} className="p-1 text-green-500 bg-green-500/10 rounded-md"><${Icon} name="Plus" size=${16} /></button>
                                             </div>
                                         </div>
                                     `)}
-
-                                    ${prizes.length > 0 && html`
-                                        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                                            <p className="text-xs font-bold text-[#ffc107] mb-2">🎁 خەڵاتەکانت:</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                ${prizes.map((p, i) => html`<span key=${i} className="bg-zinc-800 text-white text-[10px] px-2 py-1 rounded-full border border-zinc-700">✨ ${p}</span>`)}
-                                            </div>
-                                        </div>
-                                    `}
-
-                                    <textarea 
-                                        className="w-full bg-zinc-800 border border-zinc-700 p-3 rounded-xl text-white text-sm outline-none mb-4 focus:border-[#ff3131]" 
-                                        rows=${2} 
-                                        placeholder="تێبینی یان ناونیشان بنووسە..." 
-                                        value=${orderNote} 
-                                        onChange=${e => setOrderNote(e.target.value)} 
-                                    />
+                                    ${prizesWon.length > 0 && html`<div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-xs">🎁 خەڵاتەکانت: ${prizesWon.join(", ")}</div>`}
+                                    <textarea className="w-full bg-zinc-800 border-none p-3 rounded-xl text-white text-sm outline-none mb-4" rows=${2} placeholder="تێبینی..." value=${orderNote} onChange=${e => setOrderNote(e.target.value)} />
                                     <div className="my-4 flex justify-between items-center px-2">
                                         <span className="text-zinc-400 font-bold">کۆی گشتی:</span>
                                         <span className="text-2xl font-black text-white">${totalAmount.toLocaleString()} د.ع</span>
                                     </div>
-                                    <button 
-                                        onClick=${handleSendOrder} 
-                                        disabled=${isSending} 
-                                        className=${`w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-green-500/20 transition-all ${isSending ? 'opacity-70 animate-pulse' : ''}`}
-                                    >
-                                        ${isSending ? '⏳ چاوەڕوانی لۆکەیشن...' : html`<span className="flex items-center gap-2">✅ ناردنی داواکاری و بینینی وەسڵ</span>`}
+                                    <button onClick=${handleSendOrder} disabled=${isSending} className="w-full bg-[#25D366] text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg">
+                                        ${isSending ? '⏳ چاوەڕوانی لۆکەیشن...' : '✅ داواکردن و بینینی وەسڵ'}
                                     </button>
-                                    <p className="text-zinc-500 text-[10px] text-center mt-3">تکایە دڵنیابە لەوەی لۆکەیشنەکەت چالاکە بۆ ناردنی سەرکەوتووانە.</p>
                                 </div>
                             `}
                         </div>
-                    ` : html`<${AdminPanel} />`}
+                    ` : html`<${AdminPanel} categories=${categories} wheelPrizes=${wheelPrizes} />`}
 
-                    ${showWheel && html`
-                        <${LuckyWheel} 
-                            onWin=${(p) => { 
-                                setPrizes(prev => [...prev, p]); 
-                                localStorage.setItem('boomSpinCount', '1'); 
-                                localStorage.setItem('canSpinBoom', 'false'); 
-                                setShowWheel(false); 
-                            }} 
-                            onClose=${() => setShowWheel(false)} 
-                        />
-                    `}
-
-                    ${lastOrder && html`
-                        <${DigitalReceipt} 
-                            order=${lastOrder} 
-                            onClose=${() => setLastOrder(null)} 
-                        />
-                    `}
+                    ${showWheel && html`<${LuckyWheel} prizes=${wheelPrizes} onWin=${(p) => { setPrizesWon(prev => [...prev, p]); localStorage.setItem('boomSpinCount', '1'); localStorage.setItem('canSpinBoom', 'false'); setShowWheel(false); }} onClose=${() => setShowWheel(false)} />`}
+                    ${lastOrder && html`<${DigitalReceipt} order=${lastOrder} onClose=${() => setLastOrder(null)} />`}
                 </div>
             `;
         };

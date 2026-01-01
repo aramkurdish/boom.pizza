@@ -11,6 +11,10 @@
         header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); }
         header h1 { font-size: 3rem; color: var(--text-gold); text-shadow: 3px 3px 15px #000; margin: 0; }
         
+        /* شریتی پەیوەندی و لۆکەیشن */
+        .contact-strip { display: flex; justify-content: center; gap: 10px; padding: 10px; background: #111; border-bottom: 1px solid #222; }
+        .contact-item { display: flex; align-items: center; gap: 5px; background: #222; color: white; padding: 7px 15px; border-radius: 50px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
+
         .share-btn {
             background: #007bff; color: white; border: none; padding: 10px 20px; 
             border-radius: 50px; font-weight: bold; cursor: pointer; 
@@ -18,7 +22,6 @@
             font-family: 'Vazirmatn'; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,123,255,0.3);
         }
 
-        /* ستایلی چەرخی بەخت */
         .wheel-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 5000; display: none;
@@ -60,10 +63,16 @@
 <body>
 
 <audio id="orderSound" src="https://www.soundjay.com/buttons/button-20.mp3"></audio>
+
 <header>
     <h1>Boom's Pizza</h1>
     <p style="background:var(--primary-red); padding:4px 15px; border-radius:20px; font-weight:bold;">کوالێتی نایاب و تامێکی لەبیرنەکراو</p>
 </header>
+
+<div class="contact-strip">
+    <a href="https://www.google.com/maps" target="_blank" class="contact-item">📍 شوێنی ئێمە</a>
+    <a href="tel:07504629237" class="contact-item">📞 07504629237</a>
+</div>
 
 <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
     <button class="share-btn" onclick="shareSite()">📤 بڵاوکردنەوە</button>
@@ -98,7 +107,7 @@
         <div style="text-align:center; margin:20px 0;">
             <span style="font-size:1.5rem; color:var(--text-gold); font-weight:bold;">کۆی گشتی: <span id="total-amount">0</span> دینار</span>
         </div>
-        <button class="whatsapp-btn" onclick="sendToWhatsApp()">ناردنی داواکاری و لۆکەیشن (WhatsApp)</button>
+        <button class="whatsapp-btn" id="sendBtn" onclick="sendToWhatsApp()">ناردنی داواکاری و لۆکەیشن (WhatsApp)</button>
     </div>
 </div>
 
@@ -114,7 +123,6 @@
     let cart = [];
     const folderNames = { 'pizza': '🍕 جۆرەکانی پیزا', 'burger': '🍔 جۆرەکانی بەرگر', 'shawarma': '🌯 جۆرەکانی شاوەرمە', 'finger': '🍟 فینگەر', 'drink': '🥤 خواردنەوەکان' };
 
-    // فەنکشنەکانی چەرخی بەخت
     let isSpinning = false;
     const prizes = ["داشکاندنی ١٠٪", "سۆسی خۆڕایی", "گەیاندنی خۆڕایی", "پیتزای بچووک", "کۆکا کۆلا", "بەختێکی تر"];
 
@@ -126,19 +134,16 @@
         isSpinning = true;
         const wheel = document.getElementById('theWheel');
         const status = document.getElementById('wheelStatus');
-        const deg = Math.floor(Math.random() * 360) + 1800; // ٥ جار سوڕانەوە
-        
+        const deg = Math.floor(Math.random() * 360) + 1800;
         wheel.style.transform = `rotate(${deg}deg)`;
         status.innerText = "خەریکە دەوەستێت... ✨";
-
         setTimeout(() => {
             const finalDeg = deg % 360;
             const prizeIdx = Math.floor((360 - finalDeg) / 60) % 6;
             const result = prizes[prizeIdx];
             status.innerText = "🎉 پیرۆزە: " + result;
-            
             setTimeout(() => {
-                alert("خەڵاتەکەت: " + result + "\nوێنەی شاشەکە بگرە و بۆمان بنێرە لە واتسئەپ!");
+                alert("خەڵاتەکەت: " + result + "\nوێنەی شاشەکە بگرە و بۆمان بنێرە!");
                 isSpinning = false;
                 closeWheel();
             }, 1000);
@@ -199,13 +204,45 @@
         renderCart();
     }
 
+    // فەنکشنەکە گۆڕدرا بۆ ناردنی ئۆتۆماتیکی لۆکەیشن
     function sendToWhatsApp() {
         if(cart.length === 0) return alert("سەبەتەکە بەتاڵە!");
-        let txt = "📦 *داواکاری نوێ:*\n";
+
+        const btn = document.getElementById('sendBtn');
+        btn.innerText = "📍 چاوەڕێ بکە... دۆزینەوەی شوێن";
+        btn.disabled = true;
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                // لینکی ستاندارد بۆ هەردوو سیستمەکە
+                const mapLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                processOrder(mapLink);
+            }, function() {
+                // ئەگەر کڕیار لۆکەیشنی داخستبوو
+                processOrder("لۆکەیشن دیاری نەکراوە (داخراوە)");
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        } else {
+            processOrder("مۆبایلەکە پشتگیری لۆکەیشن ناکات");
+        }
+    }
+
+    function processOrder(locationInfo) {
+        const btn = document.getElementById('sendBtn');
+        btn.innerText = "ناردنی داواکاری و لۆکەیشن (WhatsApp)";
+        btn.disabled = false;
+
+        let txt = "📦 *داواکاری نوێ:*\n\n";
+        txt += `📍 *لۆکەیشن:* ${locationInfo}\n\n`;
+        txt += "🍴 *خواردنەکان:*\n";
+        
         const grouped = {};
         cart.forEach(i => grouped[i.name] = (grouped[i.name] || 0) + 1);
         for (const [n, c] of Object.entries(grouped)) txt += `🔹 ${c}x ${n}\n`;
+        
         txt += `\n💰 *کۆی گشتی:* ${document.getElementById('total-amount').innerText} دینار`;
+        
         window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(txt)}`;
     }
 
@@ -223,4 +260,3 @@
 </script>
 </body>
 </html>
-

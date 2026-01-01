@@ -1,9 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Boom's Pizza | بوم پیتزا</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#ff3131" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Boom Pizza" />
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/02R8rCjV/99999999.jpg" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700&display=swap" rel="stylesheet">
     <style>
@@ -71,6 +81,17 @@
         import htm from 'htm';
 
         const html = htm.bind(React.createElement);
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+              console.log('SW Registered!', reg);
+            }).catch(err => {
+              console.log('SW Registration failed!', err);
+            });
+          });
+        }
 
         // --- Firebase Setup ---
         const firebaseConfig = {
@@ -493,7 +514,6 @@
                     throw new Error("وێبگەڕەکەت لۆکەیشن پشتگیری ناکات");
                 }
 
-                // First Attempt: High Accuracy
                 const attempt1 = () => new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(
                         (p) => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
@@ -502,7 +522,6 @@
                     );
                 });
 
-                // Second Attempt: Normal Accuracy (Better for In-app Browsers)
                 const attempt2 = () => new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(
                         (p) => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
@@ -533,7 +552,6 @@
                     locationUrl = await getGeoLocation();
                     setShowManualInput(false);
                 } catch (error) {
-                    // If GPS fails, show the manual address input if it's not already shown
                     if (!showManualInput) {
                         alert(error.message + ". دەتوانی ناونیشانەکەت بە دەست بنووسیت.");
                         setShowManualInput(true);

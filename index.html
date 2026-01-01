@@ -10,20 +10,31 @@
         body { font-family: 'Vazirmatn', sans-serif; margin: 0; background-color: var(--dark-bg); color: #ffffff; direction: rtl; overflow-x: hidden; }
         header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); }
         header h1 { font-size: 3rem; color: var(--text-gold); text-shadow: 3px 3px 15px #000; }
+        
         .category-container { display: flex; overflow-x: auto; padding: 20px; gap: 15px; background: var(--dark-bg); position: sticky; top: 0; z-index: 1000; }
         .cat-card { min-width: 80px; text-align: center; cursor: pointer; }
         .cat-card img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--text-gold); object-fit: cover; }
         .cat-card.active img { border-color: var(--primary-red); transform: scale(1.1); box-shadow: 0 0 15px var(--primary-red); }
+        
         .menu-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .item-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid #222; display: flex; flex-direction: column; }
         .item-card img { width: 100%; height: 130px; object-fit: cover; }
         .item-info { padding: 10px; text-align: center; }
+        
         .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 12px; font-weight: bold; margin: 10px; cursor: pointer; }
         #cart-section { background: #111; border-radius: 25px; padding: 20px; margin: 30px 15px 100px; border: 2px solid #222; }
         .whatsapp-btn { background: var(--whatsapp-green); color: white; padding: 18px; border-radius: 50px; width: 100%; border: none; font-weight: bold; font-family: 'Vazirmatn'; }
+        
         .bottom-bar { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--primary-red); padding: 15px; border-radius: 50px; display: none; justify-content: space-between; z-index: 2000; box-shadow: 0 8px 30px rgba(0,0,0,0.6); }
         .snowflake { position: absolute; top: -10px; color: white; pointer-events: none; animation: fall linear infinite; }
         @keyframes fall { to { transform: translateY(105vh); } }
+
+        /* کویز ستایل */
+        .quiz-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; justify-content: center; align-items: center; text-align: center; }
+        .quiz-card { background: var(--card-bg); padding: 30px; border-radius: 20px; border: 2px solid var(--text-gold); max-width: 90%; width: 400px; }
+        .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 10px; cursor: pointer; font-family: 'Vazirmatn'; }
+        .quiz-option:hover { background: var(--primary-red); }
+        .quiz-btn { background: var(--text-gold); color: black; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; margin: 15px; }
     </style>
 </head>
 <body>
@@ -35,6 +46,10 @@
     <h1>Boom's Pizza</h1>
     <p style="background:var(--primary-red); padding:4px 15px; border-radius:20px; font-weight:bold;">کوالێتی نایاب و تامێکی لەبیرنەکراو</p>
 </header>
+
+<div style="text-align: center;">
+    <button class="quiz-btn" onclick="startQuiz()">🎮 یاری بکە و داشکاندن بەرە!</button>
+</div>
 
 <div class="category-container">
     <div class="cat-card active" onclick="openFolder('pizza', this)"><img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200"><p>پیتزا</p></div>
@@ -57,6 +72,14 @@
     </div>
 </div>
 
+<div id="quizOverlay" class="quiz-overlay">
+    <div class="quiz-card" id="quizContent">
+        <h2 id="quiz-question" style="color:var(--text-gold);"></h2>
+        <div id="quiz-options"></div>
+        <span style="margin-top:20px; display:block; cursor:pointer; color:#888;" onclick="closeQuiz()">داخستن</span>
+    </div>
+</div>
+
 <div class="bottom-bar" id="floating-cart" onclick="document.getElementById('cart-section').scrollIntoView({behavior:'smooth'})">
     <span id="floating-count">0 دانە</span>
     <strong>بینینی سەبەتە 🛒</strong>
@@ -69,6 +92,56 @@
     let cart = [];
     const folderNames = { 'pizza': '🍕 جۆرەکانی پیزا', 'burger': '🍔 جۆرەکانی بەرگر', 'shawarma': '🌯 جۆرەکانی شاوەرمە', 'finger': '🍟 فینگەر', 'drink': '🥤 خواردنەوەکان' };
 
+    // سیستەمی کویز
+    const questions = [
+        { q: "کەرەستەی سەرەکی پیزای مارگریتا چییە؟", a: ["پەنیر و تەماتە", "گۆشت و پیاز", "مریشک"], correct: 0 },
+        { q: "پیزا لە بنەڕەتدا هی کام وڵاتەیە؟", a: ["فەڕەنسا", "ئیتاڵیا", "تورکیا"], correct: 1 },
+        { q: "ناوی ئەم چێشتخانەیە چییە؟", a: ["Boom's Pizza", "King Pizza", "Master Pizza"], correct: 0 }
+    ];
+    let currentQ = 0;
+
+    function startQuiz() {
+        currentQ = 0;
+        document.getElementById('quizOverlay').style.display = 'flex';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[currentQ];
+        document.getElementById('quiz-question').innerText = q.q;
+        const optDiv = document.getElementById('quiz-options');
+        optDiv.innerHTML = '';
+        q.a.forEach((opt, i) => {
+            optDiv.innerHTML += `<button class="quiz-option" onclick="checkAnswer(${i})">${opt}</button>`;
+        });
+    }
+
+    function checkAnswer(i) {
+        if(i === questions[currentQ].correct) {
+            currentQ++;
+            if(currentQ < questions.length) {
+                showQuestion();
+            } else {
+                document.getElementById('successSound').play();
+                document.getElementById('quizContent').innerHTML = `
+                    <h2 style="color:var(--whatsapp-green);">پیرۆزە! 🎉</h2>
+                    <p>هەموو وەڵامەکانت ڕاست بوو</p>
+                    <div style="border:2px dashed var(--text-gold); padding:15px; margin:15px 0; font-size:1.4rem;">
+                        کۆدی داشکاندن: <b>BOOM10</b>
+                    </div>
+                    <p>ئەم کۆدە لە واتسئەپ بنێرە بۆ وەرگرتنی داشکاندن</p>
+                    <button class="add-btn" onclick="location.reload()">دوبارە یاری کردن</button>
+                `;
+            }
+        } else {
+            alert("وەڵامەکە هەڵەیە! دووبارە تاقی بکەرەوە 🍕");
+            closeQuiz();
+        }
+    }
+
+    function closeQuiz() { document.getElementById('quizOverlay').style.display = 'none'; }
+
+    // فەنکشنەکانی مینیو
     function openFolder(category, element) {
         document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
         element.classList.add('active');
@@ -130,7 +203,6 @@
         window.location.href = `https://wa.me/9647861995417?text=${encodeURIComponent(txt)}`;
     }
 
-    // بەفرەکە
     setInterval(() => {
         const s = document.createElement('div');
         s.className = 'snowflake';

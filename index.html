@@ -14,6 +14,7 @@
             overflow-x: hidden;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
         ::-webkit-scrollbar {
             width: 6px;
@@ -484,22 +485,61 @@
                 else if (pw !== null) alert("پاسوۆرد هەڵەیە!");
             };
 
+            const getGeoLocation = () => {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        return reject(new Error("وێبگەڕەکەت لۆکەیشن پشتگیری ناکات"));
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (p) => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
+                        (err) => {
+                            let msg = "هەڵە لە وەرگرتنی لۆکەیشن";
+                            if (err.code === 1) msg = "تکایە ڕێگە بدە ماڵپەڕەکە لۆکەیشن وەرگرێت (Permission Denied)";
+                            else if (err.code === 2) msg = "لۆکەیشنەکەت نادۆزرێتەوە، دڵنیابە GPS چالاکە (Unavailable)";
+                            else if (err.code === 3) msg = "کات زۆر تێپەڕی و لۆکەیشن وەرنەگیرا (Timeout)";
+                            reject(new Error(msg));
+                        },
+                        { 
+                            enableHighAccuracy: true, 
+                            timeout: 15000, 
+                            maximumAge: 10000 
+                        }
+                    );
+                });
+            };
+
             const handleSendOrder = async () => {
                 if (Object.keys(cart).length === 0) return alert("سەبەتەکەت بەتاڵە!");
+                
                 setIsSending(true);
-                const pos = await new Promise(resolve => navigator.geolocation.getCurrentPosition(
-                    p => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
-                    () => resolve(null), { timeout: 8000, enableHighAccuracy: true }
-                ));
-                if (!pos) {
-                    alert("تکایە لۆکەیشنەکەت چالاک بکە! داواکاری بەبێ لۆکەیشن نانێردرێت.");
+                let locationUrl = null;
+
+                try {
+                    locationUrl = await getGeoLocation();
+                } catch (error) {
+                    alert(error.message);
                     setIsSending(false);
                     return;
                 }
+
+                if (!locationUrl) {
+                    alert("نەتوانرا لۆکەیشن وەرگیرێت. تکایە دووبارە هەوڵ بدەرەوە.");
+                    setIsSending(false);
+                    return;
+                }
+
                 const orderID = Math.floor(1000 + Math.random() * 9000);
                 const itemsStr = Object.values(cart).map(i => `${i.qty}x ${i.name}`).join(", ");
                 const prizeStr = prizesWon.length > 0 ? ` | 🎁 خەڵات: ${prizesWon.join(", ")}` : "";
-                const orderData = { orderID, items: itemsStr + prizeStr, total: totalAmount.toLocaleString(), location: pos, note: orderNote, time: new Date().toLocaleString('ku-IQ') };
+                const orderData = { 
+                    orderID, 
+                    items: itemsStr + prizeStr, 
+                    total: totalAmount.toLocaleString(), 
+                    location: locationUrl, 
+                    note: orderNote, 
+                    time: new Date().toLocaleString('ku-IQ') 
+                };
+
                 try {
                     await set(ref(db, `orders/${orderID}`), orderData);
                     localStorage.setItem('canSpinBoom', 'true');
@@ -507,7 +547,10 @@
                     setCart({});
                     setOrderNote('');
                     setIsSending(false);
-                } catch { alert("هەڵە ڕوویدا"); setIsSending(false); }
+                } catch (e) { 
+                    alert("هەڵە ڕوویدا لە ناردنی داواکارییەکە"); 
+                    setIsSending(false); 
+                }
             };
 
             return html`

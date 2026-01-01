@@ -20,8 +20,7 @@
         header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); position: relative; }
         header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
 
-        /* --- Lucky Spin Styles --- */
-        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; }
+        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; display: none; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; justify-content: center; align-items: center; }
@@ -52,7 +51,7 @@
 </head>
 <body>
 
-<button class="spin-launcher" onclick="toggleWheel(true)">🎰 چەرخی بەخت</button>
+<button class="spin-launcher" id="spinLauncherBtn" onclick="toggleWheel(true)">🎰 چەرخی بەخت</button>
 
 <div class="wheel-overlay" id="wheelOverlay">
     <div class="wheel-content">
@@ -60,7 +59,7 @@
         <div class="wheel-pointer"></div>
         <canvas id="luckyWheel" width="350" height="350"></canvas>
         <br>
-        <button class="spin-btn-main" onclick="spinWheel()">بسوڕێنە! 🎰</button>
+        <button class="spin-btn-main" id="mainSpinBtn" onclick="spinWheel()">بسوڕێنە! 🎰</button>
     </div>
 </div>
 
@@ -120,36 +119,42 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let cart = [];
+    let cart = {}; 
+    let currentRotation = 0;
 
-    // --- Lucky Spin Setup ---
     const prizes = [
-        { label: "داشکان %5", color: "#ff3131" },
-        { label: "داشکان %10", color: "#161616" },
-        { label: "cola", color: "#ffc107" },
-        { label: "boom-pizza", color: "#25D366" }
+        { label: "%5 Discount", color: "#ff3131", prob: 80 },
+        { label: "%10 Discount", color: "#161616", prob: 10 },
+        { label: "Free Cola", color: "#ffc107", prob: 5 },
+        { label: "Boom Pizza", color: "#25D366", prob: 1 },
+        { label: "Try Again", color: "#333", prob: 1 },
+        { label: "Gift 1", color: "#444", prob: 1 },
+        { label: "Gift 2", color: "#555", prob: 1 },
+        { label: "Gift 3", color: "#666", prob: 1 }
     ];
 
     const canvas = document.getElementById('luckyWheel');
     const ctx = canvas.getContext('2d');
-    let currentRotation = 0;
+
+    function checkSpinAccess() {
+        const canSpin = localStorage.getItem('canSpinBoom');
+        if (canSpin === 'true') {
+            document.getElementById('spinLauncherBtn').style.display = 'block';
+        } else {
+            document.getElementById('spinLauncherBtn').style.display = 'none';
+        }
+    }
 
     function drawWheel() {
         const arc = (2 * Math.PI) / prizes.length;
         prizes.forEach((prize, i) => {
             const angle = i * arc;
-            ctx.beginPath();
-            ctx.fillStyle = prize.color;
-            ctx.moveTo(175, 175);
-            ctx.arc(175, 175, 175, angle, angle + arc);
-            ctx.fill();
-            ctx.save();
-            ctx.translate(175, 175);
-            ctx.rotate(angle + arc / 2);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "white";
-            ctx.font = "bold 18px Vazirmatn";
-            ctx.fillText(prize.label, 150, 10);
+            ctx.beginPath(); ctx.fillStyle = prize.color;
+            ctx.moveTo(175, 175); ctx.arc(175, 175, 175, angle, angle + arc);
+            ctx.fill(); ctx.save();
+            ctx.translate(175, 175); ctx.rotate(angle + arc / 2);
+            ctx.textAlign = "right"; ctx.fillStyle = "white";
+            ctx.font = "bold 14px Vazirmatn"; ctx.fillText(prize.label, 150, 10);
             ctx.restore();
         });
     }
@@ -160,54 +165,62 @@
     }
 
     function spinWheel() {
-        if (window.isSpinning) return;
+        if (window.isSpinning || localStorage.getItem('canSpinBoom') !== 'true') return;
+        
         window.isSpinning = true;
-
         const randomNum = Math.random() * 100;
-        let targetAngle;
+        let cumulativeProb = 0;
+        let prizeIndex = 0;
 
-        if (randomNum < 80) {
-            targetAngle = Math.floor(Math.random() * 90); // Prize 1 (80%)
-        } else if (randomNum < 90) {
-            targetAngle = Math.floor(Math.random() * 90) + 90; // Prize 2 (10%)
-        } else if (randomNum < 95) {
-            targetAngle = Math.floor(Math.random() * 90) + 180; // Prize 3 (5%)
-        } else {
-            targetAngle = Math.floor(Math.random() * 90) + 270; // Prize 4 (5% total remaining, close to your 1 requirement)
+        for (let i = 0; i < prizes.length; i++) {
+            cumulativeProb += prizes[i].prob;
+            if (randomNum <= cumulativeProb) { prizeIndex = i; break; }
         }
 
-        const stopAt = 360 - targetAngle;
-        const totalSpins = 10 * 360;
-        currentRotation += totalSpins + stopAt - (currentRotation % 360);
+        const segmentDegree = 360 / prizes.length;
+        const centerOfSegment = (prizeIndex * segmentDegree) + (segmentDegree / 2);
+        const rotationToTarget = 270 - centerOfSegment;
+        currentRotation += (10 * 360) + rotationToTarget - (currentRotation % 360);
         
         canvas.style.transform = `rotate(${currentRotation}deg)`;
         
         setTimeout(() => { 
-            window.isSpinning = false; 
-            const prizeIndex = Math.floor(targetAngle / 90);
-            alert("پیرۆزە! تۆ " + prizes[prizeIndex].label + " ت بردەوە.");
+            window.isSpinning = false;
+            localStorage.setItem('canSpinBoom', 'false'); // Lock it forever after 1 spin
+            alert("پیرۆزە! " + prizes[prizeIndex].label);
+            setTimeout(() => { 
+                toggleWheel(false);
+                checkSpinAccess();
+            }, 1000);
         }, 5000);
     }
 
-    function switchPage(id, btn) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+    function addToCart(name, price) {
+        if (cart[name]) { cart[name].qty++; } 
+        else { cart[name] = { price: price, qty: 1 }; }
+        updateCartUI();
     }
 
-    function handleAdminAccess(id, btn) {
-        if(prompt("پاسوۆرد:") === "1998a") switchPage(id, btn);
-        else alert("هەڵەیە!");
+    function updateCartUI() {
+        let total = 0;
+        const list = document.getElementById('cart-items');
+        list.innerHTML = '';
+        for (const name in cart) {
+            const item = cart[name];
+            total += item.price * item.qty;
+            list.innerHTML += `<div>${item.qty}x ${name} - ${(item.price * item.qty).toLocaleString()}</div>`;
+        }
+        document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
     function getLocationAndSend() {
-        if(cart.length === 0) return alert("سەبەتە بەتاڵە!");
+        if(Object.keys(cart).length === 0) return alert("سەبەتە بەتاڵە!");
         const btn = document.getElementById('sendBtn');
         btn.innerText = "⏳ وەرگرتنی لۆکەیشن..."; btn.disabled = true;
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
-                const googleMapsUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                processOrder(googleMapsUrl);
-            }, (err) => { processOrder("دیاری نەکراوە"); }, { enableHighAccuracy: true });
+                processOrder(`http://maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
+            }, () => { processOrder("دیاری نەکراوە"); }, { enableHighAccuracy: true });
         } else { processOrder("پشتگیری ناکرێت"); }
     }
 
@@ -215,9 +228,13 @@
         const orderID = Math.floor(1000 + Math.random() * 9000);
         const note = document.getElementById('order-note').value || "نییە";
         const total = document.getElementById('total-amount').innerText;
-        const items = cart.map(i => i.name).join(', ');
-        db.ref('orders/' + orderID).set({ orderID, items, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
-            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${items}\n💰 ${total}\n📍 ${mapUrl}`)}`;
+        let itemsStr = "";
+        for (const name in cart) { itemsStr += `${cart[name].qty}x ${name}, `; }
+
+        db.ref('orders/' + orderID).set({ orderID, items: itemsStr, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
+            localStorage.setItem('canSpinBoom', 'true'); // Unlock spin after successful order
+            checkSpinAccess();
+            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${itemsStr}\n💰 ${total}\n📍 ${mapUrl}`)}`;
         });
     }
 
@@ -229,32 +246,27 @@
             display.innerHTML = '';
             snap.forEach(child => {
                 const item = child.val();
-                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زیادکردن +</button></div>`;
+                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price.toLocaleString()}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زیادکردن +</button></div>`;
             });
         });
     }
 
-    function addToCart(name, price) {
-        cart.push({name, price});
-        let total = 0; cart.forEach(i => total += i.price);
-        document.getElementById('total-amount').innerText = total.toLocaleString();
-        const list = document.getElementById('cart-items');
-        list.innerHTML = '';
-        cart.forEach(i => { list.innerHTML += `<div>${i.name} - ${i.price}</div>`; });
+    function handleAdminAccess(id, btn) {
+        if(prompt("پاسوۆرد:") === "1998a") {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        } else alert("هەڵەیە!");
     }
 
-    function uploadItem() {
-        const name = document.getElementById('adm-name').value;
-        const price = parseInt(document.getElementById('adm-price').value);
-        const disc = document.getElementById('adm-disc').value;
-        const img = document.getElementById('adm-img').value;
-        const cat = document.getElementById('adm-cat').value;
-        if(name && price) {
-            db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat}).then(()=>alert("زیاد کرا"));
-        }
+    function switchPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
 
-    window.onload = () => loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
+    window.onload = () => {
+        loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
+        checkSpinAccess();
+    };
 </script>
 </body>
 </html>

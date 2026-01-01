@@ -3,50 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boom Pizza - Orders</title>
+    <title>Boom Pizza - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        :root { --accent: #ff3131; --bg: #0a0b0d; --card: #16181d; --gold: #ffc107; }
-        body { font-family: 'Vazirmatn', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; }
+        :root { --accent: #ff3131; --bg: #0a0b0d; --card: #16181d; --gold: #ffc107; --green: #25D366; }
+        body { font-family: 'Vazirmatn', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; }
         
-        .header { text-align: center; padding: 15px; border-bottom: 2px solid var(--accent); margin-bottom: 20px; }
-        .order-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #25282e; position: relative; animation: slideIn 0.5s ease; }
+        .top-nav { background: #000; padding: 15px; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         
-        /* ئایکۆنی نوێ بۆ ماوەی ٥ خولەک */
-        .new-badge { 
-            position: absolute; top: -10px; left: -10px; 
-            background: var(--accent); color: white; padding: 5px 15px; 
-            border-radius: 50px; font-weight: 900; font-size: 0.8rem;
-            box-shadow: 0 0 15px var(--accent); animation: blink 1s infinite;
-        }
+        .daily-sales { background: linear-gradient(145deg, #1e2024, #16181d); padding: 15px; border-radius: 15px; margin: 15px 0; border: 1px solid #25282e; text-align: center; }
+        .daily-sales span { color: #888; font-size: 0.9rem; }
+        .daily-sales h2 { margin: 5px 0; color: var(--green); font-size: 1.8rem; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .order-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #25282e; position: relative; }
+        .new-badge { position: absolute; top: -10px; left: -10px; background: var(--accent); color: white; padding: 4px 12px; border-radius: 50px; font-weight: 900; font-size: 0.7rem; box-shadow: 0 0 10px var(--accent); animation: blink 1s infinite; }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .id-badge { color: var(--gold); font-weight: 900; font-size: 1.2rem; }
-        .items-box { background: #1f2229; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #333; }
-        .btn-print { background: white; color: black; padding: 12px; border-radius: 10px; border: none; font-weight: bold; width: 100%; cursor: pointer; }
-
-        /* بەشی وەسڵ بۆ چاپکردن */
+        .items-box { background: #1f2229; padding: 12px; border-radius: 10px; margin: 10px 0; border: 1px solid #333; }
+        .btn-print { background: white; color: black; padding: 12px; border-radius: 10px; border: none; font-weight: bold; width: 100%; cursor: pointer; font-size: 1rem; }
+        
         #print-area { display: none; }
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: black; background: white; padding: 20px; }
-            .r-head { text-align: center; font-size: 24px; font-weight: 900; border-bottom: 2px solid black; padding-bottom: 10px; }
-            .r-id { font-size: 20px; font-weight: 900; text-align: center; margin: 15px 0; border: 1px solid black; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header"><h1>🍕 داواکارییەکانی بوم پیتزا</h1></div>
-    <div id="list">چاوەڕوان بە...</div>
+    <div class="top-nav">
+        <h2 style="margin:0; font-size: 1.2rem; color: var(--accent);">🍕 BOOM PIZZA</h2>
+        <button onclick="clearAll()" style="background:none; border:1px solid #444; color:#888; border-radius:8px; padding:5px 10px; font-family:inherit; cursor:pointer;">سڕینەوەی لیست</button>
+    </div>
+
+    <div class="daily-sales">
+        <span>💰 داهاتی ئەمڕۆ (٢٤ کاتژمێر)</span>
+        <h2 id="today-revenue">0 د.ع</h2>
+        <small id="current-date" style="color:#555"></small>
+    </div>
+
+    <div id="list">چاوەڕوانی ئۆردەری نوێ...</div>
     <div id="print-area"></div>
 
-    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+    <audio id="bell" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
     <script>
         const firebaseConfig = {
@@ -61,66 +64,78 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let lastOrderCount = -1;
+        let lastCount = -1;
 
-        function doPrint(id, items, total, phone, time, note) {
-            const area = document.getElementById('print-area');
-            area.innerHTML = `
-                <div class="r-head">BOOM PIZZA</div>
-                <div class="r-id">داواکاری #${id}</div>
-                <p><b>کات:</b> ${time}</p>
-                <p><b>مۆبایل:</b> ${phone}</p>
-                <hr>
-                <p><b>داواکاری:</b><br>${items}</p>
-                ${note !== 'نییە' ? `<p><b>تێبینی:</b> ${note}</p>` : ''}
-                <hr>
-                <h3 style="text-align:left">کۆی گشتی: ${total} د.ع</h3>
-            `;
-            window.print();
+        function clearAll() {
+            if(confirm("هەموو لیستەکە دەسڕێتەوە، دڵنیای؟")) db.ref('orders').remove();
+        }
+
+        // فەنکشنی وەرگرتنی ڕێکەوتی ئەمڕۆ بە کوردی/عەرەبی بۆ بەراوردکردن
+        function getTodayDateString() {
+            const now = new Date();
+            return now.toLocaleDateString('en-CA'); // یانی YYYY-MM-DD
         }
 
         db.ref('orders').on('value', (snapshot) => {
             const listDiv = document.getElementById('list');
+            const revenueEl = document.getElementById('today-revenue');
             const data = snapshot.val();
             listDiv.innerHTML = '';
             
+            let dailyTotal = 0;
+            const todayStr = getTodayDateString();
+            document.getElementById('current-date').innerText = "ڕێکەوت: " + todayStr;
+
             if (data) {
                 const keys = Object.keys(data);
                 
-                // لێدانی دەنگ ئەگەر داواکاری نوێ هات
-                if (lastOrderCount !== -1 && keys.length > lastOrderCount) {
-                    document.getElementById('order-sound').play().catch(e => console.log("دەنگ کارناکات تا کلیک نەکەیت"));
+                // دەنگی زەنگ
+                if (lastCount !== -1 && keys.length > lastCount) {
+                    document.getElementById('bell').play().catch(() => {});
                 }
-                lastOrderCount = keys.length;
+                lastCount = keys.length;
 
-                // ڕیزکردن: نوێترین لە سەرەوە
                 keys.reverse().forEach(key => {
                     const o = data[key];
                     const itemsStr = Array.isArray(o.items) ? o.items.join(' + ') : o.items;
                     
-                    // لۆجیکی ئایکۆنی "New" بۆ ماوەی ٥ خولەک
-                    let isNew = false;
-                    if(o.time) {
-                        const orderTime = new Date(o.time).getTime();
-                        const now = new Date().getTime();
-                        if (now - orderTime < 5 * 60 * 1000) isNew = true;
+                    // هەژمارکردنی داهاتی تەنها ئەمڕۆ
+                    // تێبینی: دەبێت لە کاتی ناردنی ئۆردەر، کاتەکە بەم شێوەیە بێت: 2024-05-20 14:30
+                    if (o.time && o.time.includes(todayStr)) {
+                        let price = parseInt(o.total?.toString().replace(/[^0-9]/g, '') || 0);
+                        dailyTotal += price;
                     }
+
+                    // نیشاندانی نیشانەی NEW بۆ ٥ خولەک
+                    let isNew = false;
+                    const orderTime = new Date(o.time).getTime();
+                    if (new Date().getTime() - orderTime < 5 * 60 * 1000) isNew = true;
 
                     listDiv.innerHTML += `
                         <div class="order-card">
-                            ${isNew ? '<div class="new-badge">NEW ✨</div>' : ''}
-                            <div style="display:flex; justify-content:space-between">
-                                <span class="id-badge">#${o.id}</span>
-                                <small style="color:#888">${o.time || ''}</small>
+                            ${isNew ? '<div class="new-badge">نوێ ✨</div>' : ''}
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color:var(--gold); font-weight:900;">#${o.id}</span>
+                                <small style="color:#666">${o.time || ''}</small>
                             </div>
                             <div class="items-box"><b>داواکاری:</b><br> ${itemsStr}</div>
-                            <div style="margin-bottom:15px">💰 کۆ: <b>${o.total}</b> | 📱 ${o.phone}</div>
-                            <button class="btn-print" onclick="doPrint('${o.id}', '${itemsStr}', '${o.total}', '${o.phone}', '${o.time}', '${o.note}')">چاپکردنی وەسڵ 🖨️</button>
+                            <div style="margin-bottom:15px;">💰 بڕ: <b>${o.total}</b> | 📞 ${o.phone}</div>
+                            <button class="btn-print" onclick="doPrint('${o.id}', '${itemsStr}', '${o.total}', '${o.phone}', '${o.time}', '${o.note}')">چاپکردن 🖨️</button>
                         </div>
                     `;
                 });
+            } else {
+                listDiv.innerHTML = '<p style="text-align:center; color:#444; margin-top:50px;">لیستەکە بەتاڵە</p>';
+                lastCount = 0;
             }
+            revenueEl.innerText = dailyTotal.toLocaleString() + " د.ع";
         });
+
+        function doPrint(id, items, total, phone, time, note) {
+            const area = document.getElementById('print-area');
+            area.innerHTML = `<div style="text-align:center;"><h2>BOOM PIZZA</h2><hr><h3>Order #${id}</h3><p>${time}</p><p>Phone: ${phone}</p><hr><p>${items}</p><hr><h2>Total: ${total} IQD</h2></div>`;
+            window.print();
+        }
     </script>
 </body>
 </html>

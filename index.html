@@ -20,6 +20,13 @@
         header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); }
         header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
 
+        /* Lucky Spin Styles */
+        .spin-section { padding: 20px; text-align: center; background: #111; border-bottom: 1px solid #222; }
+        .wheel-container { position: relative; width: 300px; margin: 0 auto; }
+        #luckyWheel { border-radius: 50%; border: 5px solid #333; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); width: 100%; max-width: 300px; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid var(--primary-red); z-index: 10; }
+        .spin-btn { background: var(--primary-red); color: white; border: none; padding: 10px 25px; border-radius: 50px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Vazirmatn'; }
+
         .category-container { display: flex; overflow-x: auto; padding: 15px; gap: 15px; background: var(--dark-bg); }
         .cat-card { min-width: 85px; text-align: center; cursor: pointer; }
         .cat-card img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid #333; object-fit: cover; }
@@ -28,7 +35,6 @@
         .menu-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .item-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; border: 1px solid #222; position: relative; display: flex; flex-direction: column; }
         .item-card img { width: 100%; height: 120px; object-fit: cover; }
-        
         .discount-badge { position: absolute; top: 8px; left: 8px; background: var(--primary-red); color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; z-index: 5; }
 
         .item-info { padding: 10px; text-align: center; flex-grow: 1; }
@@ -52,6 +58,16 @@
 
 <div id="main-site" class="page active">
     <header><h1>Boom's Pizza</h1></header>
+
+    <div class="spin-section">
+        <h3 style="color:var(--text-gold); margin-bottom:15px;">🎰 چەرخی بەخت تاقی بکەرەوە!</h3>
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <canvas id="luckyWheel" width="350" height="350"></canvas>
+        </div>
+        <button class="spin-btn" onclick="spinWheel()">بسوڕێنە!</button>
+    </div>
+
     <div class="category-container">
         <div class="cat-card active" onclick="loadFirebaseMenu('pizza', this)"><img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150"><p>پیتزا</p></div>
         <div class="cat-card" onclick="loadFirebaseMenu('burger', this)"><img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150"><p>بەرگر</p></div>
@@ -102,6 +118,51 @@
     const db = firebase.database();
     let cart = [];
 
+    // --- Lucky Spin Logic ---
+    const prizes = [
+        { label: "Prize 1", color: "#ff3131" },
+        { label: "Prize 2", color: "#161616" },
+        { label: "Prize 3", color: "#ffc107" },
+        { label: "Prize 4", color: "#25D366" }
+    ];
+    const canvas = document.getElementById('luckyWheel');
+    const ctx = canvas.getContext('2d');
+    let currentRotation = 0;
+
+    function drawWheel() {
+        const arc = (2 * Math.PI) / prizes.length;
+        prizes.forEach((prize, i) => {
+            const angle = i * arc;
+            ctx.beginPath();
+            ctx.fillStyle = prize.color;
+            ctx.moveTo(175, 175);
+            ctx.arc(175, 175, 175, angle, angle + arc);
+            ctx.fill();
+            ctx.save();
+            ctx.translate(175, 175);
+            ctx.rotate(angle + arc / 2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = "white";
+            ctx.font = "bold 18px Vazirmatn";
+            ctx.fillText(prize.label, 150, 10);
+            ctx.restore();
+        });
+    }
+
+    function spinWheel() {
+        if (window.isSpinning) return;
+        window.isSpinning = true;
+        const extraDegrees = Math.floor(Math.random() * 360);
+        const totalSpins = 8 * 360;
+        currentRotation += totalSpins + extraDegrees;
+        canvas.style.transform = `rotate(${currentRotation}deg)`;
+        setTimeout(() => { 
+            window.isSpinning = false; 
+            alert("ئەنجامەکە دیاری کرا! پیرۆزە.");
+        }, 5000);
+    }
+
+    // --- Existing Functions ---
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -113,7 +174,6 @@
         else alert("هەڵەیە!");
     }
 
-    // --- فەنکشنی لۆکەیشن و ناردن بۆ واتسئەپ ---
     function getLocationAndSend() {
         if(cart.length === 0) return alert("سەبەتە بەتاڵە!");
         const btn = document.getElementById('sendBtn');
@@ -143,9 +203,7 @@
         const note = document.getElementById('order-note').value || "نییە";
         const total = document.getElementById('total-amount').innerText;
         const items = cart.map(i => i.name).join(', ');
-
         const orderData = { orderID, items, total, location: mapUrl, note, time: new Date().toLocaleString() };
-
         db.ref('orders/' + orderID).set(orderData).then(() => {
             const waMsg = `🆔 *#${orderID}*\n🍴 *خواردن:* ${items}\n💰 *کۆ:* ${total} دینار\n📝 *تێبینی:* ${note}\n📍 *شوێن:* ${mapUrl}`;
             window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(waMsg)}`;
@@ -164,7 +222,6 @@
                 const item = child.val();
                 let priceHTML = `<b>${item.price.toLocaleString()} د.ع</b>`;
                 if(item.discount) {
-                    const pct = Math.round(((item.price - item.discount) / item.price) * 100);
                     priceHTML = `<span style="text-decoration:line-through; font-size:0.8rem; color:#666;">${item.price}</span> <b>${item.discount.toLocaleString()} د.ع</b>`;
                 }
                 display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3>${priceHTML}</div><button class="add-btn" onclick="addToCart('${item.name}', ${item.discount || item.price})">زیادکردن +</button></div>`;
@@ -188,12 +245,14 @@
         const img = document.getElementById('adm-img').value;
         const cat = document.getElementById('adm-cat').value;
         if(name && price) {
-            db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat})
-            .then(()=>alert("زیاد کرا"));
+            db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat}).then(()=>alert("زیاد کرا"));
         }
     }
 
-    window.onload = () => loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
+    window.onload = () => {
+        loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
+        drawWheel();
+    };
 </script>
 </body>
 </html>

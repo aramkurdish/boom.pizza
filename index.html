@@ -69,4 +69,131 @@
 </div>
 
 <div id="edit-site" class="page" style="padding:20px;">
-    <div style="background:#111;
+    <div style="background:#111; padding:20px; border-radius:20px; border:1px solid #333;">
+        <h3>➕ زیادکردنی خواردن</h3>
+        <input type="text" id="adm-name" class="order-input" placeholder="ناوی خواردن">
+        <input type="number" id="adm-price" class="order-input" placeholder="نرخ">
+        <input type="number" id="adm-disc" class="order-input" placeholder="نرخی داشکان (ئەگەر هەیە)">
+        <input type="text" id="adm-img" class="order-input" placeholder="لێنکی وێنە">
+        <select id="adm-cat" class="order-input">
+            <option value="pizza">پیتزا</option>
+            <option value="burger">بەرگر</option>
+            <option value="shawarma">شاوەرمە</option>
+            <option value="drink">خواردنەوە</option>
+        </select>
+        <button class="add-btn" style="width:100%; margin-top:20px; background:var(--whatsapp-green);" onclick="uploadItem()">پاشەکەوتکردن</button>
+    </div>
+    <div id="admin-items-list" style="margin-top:20px;"></div>
+</div>
+
+<div id="orders-site" class="page" style="padding:20px;"><div id="firebase-orders"></div></div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
+        authDomain: "boompizza-5d048.firebaseapp.com",
+        databaseURL: "https://boompizza-5d048-default-rtdb.firebaseio.com",
+        projectId: "boompizza-5d048",
+        storageBucket: "boompizza-5d048.firebasestorage.app",
+        messagingSenderId: "636068289590",
+        appId: "1:636068289590:web:41fe758906140c700ecc97"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let cart = [];
+
+    function switchPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'edit-site') fetchAdminList();
+    }
+
+    function handleAdminAccess(id, btn) {
+        if(prompt("پاسوۆرد:") === "1998a") switchPage(id, btn);
+        else alert("هەڵەیە!");
+    }
+
+    // --- فەنکشنی لۆکەیشن و ناردن بۆ واتسئەپ ---
+    function getLocationAndSend() {
+        if(cart.length === 0) return alert("سەبەتە بەتاڵە!");
+        const btn = document.getElementById('sendBtn');
+        btn.innerText = "⏳ وەرگرتنی لۆکەیشن..."; btn.disabled = true;
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                    processOrder(googleMapsUrl);
+                },
+                (err) => {
+                    alert("کێشە لە لۆکەیشن هەیە، بەبێ لۆکەیشن دەنێردرێت.");
+                    processOrder("دیاری نەکراوە");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            processOrder("پشتگیری ناکرێت");
+        }
+    }
+
+    function processOrder(mapUrl) {
+        const orderID = Math.floor(1000 + Math.random() * 9000);
+        const note = document.getElementById('order-note').value || "نییە";
+        const total = document.getElementById('total-amount').innerText;
+        const items = cart.map(i => i.name).join(', ');
+
+        const orderData = { orderID, items, total, location: mapUrl, note, time: new Date().toLocaleString() };
+
+        db.ref('orders/' + orderID).set(orderData).then(() => {
+            const waMsg = `🆔 *#${orderID}*\n🍴 *خواردن:* ${items}\n💰 *کۆ:* ${total} دینار\n📝 *تێبینی:* ${note}\n📍 *شوێن:* ${mapUrl}`;
+            window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(waMsg)}`;
+            document.getElementById('sendBtn').innerText = "ناردنی داواکاری و لۆکەیشن ✅";
+            document.getElementById('sendBtn').disabled = false;
+        });
+    }
+
+    function loadFirebaseMenu(cat, el) {
+        document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        db.ref('menu_items').orderByChild('category').equalTo(cat).on('value', snap => {
+            const display = document.getElementById('menu-display');
+            display.innerHTML = '';
+            snap.forEach(child => {
+                const item = child.val();
+                let priceHTML = `<b>${item.price.toLocaleString()} د.ع</b>`;
+                if(item.discount) {
+                    const pct = Math.round(((item.price - item.discount) / item.price) * 100);
+                    priceHTML = `<span style="text-decoration:line-through; font-size:0.8rem; color:#666;">${item.price}</span> <b>${item.discount.toLocaleString()} د.ع</b>`;
+                }
+                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3>${priceHTML}</div><button class="add-btn" onclick="addToCart('${item.name}', ${item.discount || item.price})">زیادکردن +</button></div>`;
+            });
+        });
+    }
+
+    function addToCart(name, price) {
+        cart.push({name, price});
+        let total = 0; 
+        const list = document.getElementById('cart-items');
+        list.innerHTML = '';
+        cart.forEach(i => { total += i.price; list.innerHTML += `<div>${i.name} - ${i.price}</div>`; });
+        document.getElementById('total-amount').innerText = total.toLocaleString();
+    }
+
+    function uploadItem() {
+        const name = document.getElementById('adm-name').value;
+        const price = parseInt(document.getElementById('adm-price').value);
+        const disc = document.getElementById('adm-disc').value;
+        const img = document.getElementById('adm-img').value;
+        const cat = document.getElementById('adm-cat').value;
+        if(name && price) {
+            db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat})
+            .then(()=>alert("زیاد کرا"));
+        }
+    }
+
+    window.onload = () => loadFirebaseMenu('pizza', document.querySelector('.cat-card'));
+</script>
+</body>
+</html>

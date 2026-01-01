@@ -11,33 +11,37 @@
         :root { --accent: #ff3131; --bg: #0a0b0d; --card: #16181d; --text: #ffffff; --gold: #ffc107; }
         body { font-family: 'Vazirmatn', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
         
-        /* Container & Layout */
         .container { padding: 15px; max-width: 500px; margin: auto; }
+        
+        /* Table Grid */
         .table-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .table-btn { background: var(--card); border: 1px solid #25282e; color: white; padding: 15px 5px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+        .table-btn { background: var(--card); border: 1px solid #25282e; color: white; padding: 15px 5px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-family: inherit; }
         .table-btn.active { background: var(--accent); border-color: #fff; }
 
+        /* Order Form */
         .order-form { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #25282e; }
         
         /* Selected Items List */
-        .selected-list { margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+        .selected-list { margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; max-height: 200px; overflow-y: auto; }
         .item-row { display: flex; justify-content: space-between; align-items: center; background: #1f2229; padding: 10px; margin-bottom: 8px; border-radius: 10px; border-right: 3px solid var(--accent); }
-        .item-info { flex-grow: 1; }
-        .item-info small { color: var(--gold); display: block; font-size: 0.8rem; }
-        .del-btn { color: #ff3131; background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 10px; }
+        .del-btn { color: #ff3131; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
 
-        /* Modals */
+        /* Category/Folder Styles */
+        .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .cat-btn { background: #25282e; border: 1px solid #444; color: white; padding: 20px 10px; border-radius: 15px; cursor: pointer; text-align: center; font-weight: bold; }
+        .cat-btn:active { background: var(--accent); }
+
+        /* Modal Styles */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: var(--card); width: 85%; max-width: 350px; padding: 20px; border-radius: 20px; border: 1px solid var(--accent); }
         
-        .food-grid { max-height: 300px; overflow-y: auto; }
-        .food-item { background: #1f2229; padding: 12px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; }
+        .food-item { background: #1f2229; padding: 15px; margin: 8px 0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; border: 1px solid #333; }
         
-        .qty-input { width: 60px; text-align: center; font-size: 1.5rem; background: #000; color: var(--gold); border: 1px solid #444; border-radius: 8px; padding: 5px; }
-        .extra-input { width: 100%; padding: 10px; background: #1f2229; border: 1px solid #333; color: white; border-radius: 8px; margin-top: 10px; font-family: inherit; }
+        .qty-input { width: 70px; text-align: center; font-size: 1.5rem; background: #000; color: var(--gold); border: 1px solid #444; border-radius: 8px; padding: 5px; }
+        .extra-input { width: 100%; padding: 12px; background: #1f2229; border: 1px solid #333; color: white; border-radius: 10px; margin-top: 10px; font-family: inherit; }
 
-        .btn-main { background: var(--accent); color: white; padding: 15px; border-radius: 12px; border: none; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-cancel { background: #333; color: #fff; padding: 10px; border-radius: 8px; border: none; width: 100%; margin-top: 10px; cursor: pointer; }
+        .btn-main { background: var(--accent); color: white; padding: 15px; border-radius: 12px; border: none; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; font-family: inherit; }
+        .btn-cancel { background: #333; color: #fff; padding: 10px; border-radius: 8px; border: none; width: 100%; margin-top: 10px; cursor: pointer; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -55,7 +59,14 @@
         </div>
 
         <div class="order-form">
-            <button class="btn-main" onclick="openFoodModal()" style="background:#1f2229; border:1px dashed var(--accent);">+ زیادکردنی خواردن</button>
+            <p style="margin: 0 0 10px; font-size: 0.9rem; color: #888;">پۆلێنەکان هەڵبژێرە:</p>
+            
+            <div class="category-grid">
+                <div class="cat-btn" onclick="openCat('پیتزاکان')">🍕 پیتزاکان</div>
+                <div class="cat-btn" onclick="openCat('بەرگرەکان')">🍔 بەرگرەکان</div>
+                <div class="cat-btn" onclick="openCat('لاوەکییەکان')">🍟 لاوەکییەکان</div>
+                <div class="cat-btn" onclick="openCat('خواردنەوە')">🥤 خواردنەوە</div>
+            </div>
             
             <div class="selected-list" id="selected-list">
                 </div>
@@ -65,36 +76,29 @@
                     <span>کۆی گشتی:</span>
                     <span id="display-total" style="color:var(--gold);">0 د.ع</span>
                 </div>
-                <button class="btn-main" onclick="sendOrder()">ناردنی داواکاری ✅</button>
+                <button class="btn-main" onclick="sendOrder()">ناردنی داواکاری بۆ ئەدمین ✅</button>
             </div>
         </div>
     </div>
 
-    <div id="food-modal" class="modal">
+    <div id="cat-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0;">لیستی خواردن</h3>
-            <div class="food-grid">
-                <div class="food-item" onclick="promptQty('پیتزا مێکس', 8000)"><span>پیتزا مێکس</span><span>8,000</span></div>
-                <div class="food-item" onclick="promptQty('پیتزا پیرۆنی', 7000)"><span>پیتزا پیرۆنی</span><span>7,000</span></div>
-                <div class="food-item" onclick="promptQty('پیتزا مریشک', 7500)"><span>پیتزا مریشک</span><span>7,500</span></div>
-                <div class="food-item" onclick="promptQty('بەرگر گۆشت', 5000)"><span>بەرگر گۆشت</span><span>5,000</span></div>
-                <div class="food-item" onclick="promptQty('بەرگر مریشک', 4500)"><span>بەرگر مریشک</span><span>4,500</span></div>
-                <div class="food-item" onclick="promptQty('فینگەر', 2500)"><span>فینگەر</span><span>2,500</span></div>
-                <div class="food-item" onclick="promptQty('پێپسی', 500)"><span>پێپسی</span><span>500</span></div>
-            </div>
-            <button class="btn-cancel" onclick="closeModal('food-modal')">داخستن</button>
+            <h3 id="cat-title" style="margin-top:0; color:var(--accent);">ناو</h3>
+            <div id="food-list" style="max-height: 350px; overflow-y: auto;">
+                </div>
+            <button class="btn-cancel" onclick="closeModal('cat-modal')">داخستن</button>
         </div>
     </div>
 
     <div id="qty-modal" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h3 id="modal-food-name">ناو</h3>
-            <div style="display:flex; align-items:center; justify-content:center; gap:15px; margin:15px 0;">
-                <span style="font-size:0.9rem; color:#888;">بڕ:</span>
-                <input type="number" id="qty-input" class="qty-input" value="1">
+            <h3 id="modal-food-name" style="margin-top:0;">ناو</h3>
+            <div style="margin:15px 0;">
+                <label style="display:block; margin-bottom:10px; color:#888;">بڕی داواکراو:</label>
+                <input type="number" id="qty-input" class="qty-input" value="1" onfocus="this.select()">
             </div>
-            <input type="text" id="extra-input" class="extra-input" placeholder="زیادەکردنی شت (پەنیر، فینگەر...)">
-            <button class="btn-main" onclick="confirmAdd()">زیادکردن</button>
+            <input type="text" id="extra-input" class="extra-input" placeholder="زیادەیەک (وەک: بێ پیاز، پەنیر...)">
+            <button class="btn-main" onclick="confirmAdd()">پاشەکەوت و زیادکردن</button>
             <button class="btn-cancel" onclick="closeModal('qty-modal')">پاشگەزبوونەوە</button>
         </div>
     </div>
@@ -108,9 +112,33 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        const menuData = {
+            'پیتزاکان': [
+                { name: 'پیتزا مێکس', price: 8000 },
+                { name: 'پیتزا پیرۆنی', price: 7000 },
+                { name: 'پیتزا مریشک', price: 7500 },
+                { name: 'پیتزا سەوزە', price: 6000 }
+            ],
+            'بەرگرەکان': [
+                { name: 'بەرگر گۆشت', price: 5000 },
+                { name: 'بەرگر مریشک', price: 4500 },
+                { name: 'زینگەر بەرگر', price: 5500 }
+            ],
+            'لاوەکییەکان': [
+                { name: 'فینگەر', price: 2500 },
+                { name: 'ناگێت', price: 3500 },
+                { name: 'پەتاتەی سوورەکراو', price: 2000 }
+            ],
+            'خواردنەوە': [
+                { name: 'پێپسی', price: 500 },
+                { name: 'ئاو', price: 250 },
+                { name: 'شەربەت', price: 1000 }
+            ]
+        };
+
         let selectedDesk = null;
         let cart = [];
-        let currentFood = null;
+        let currentItem = null;
 
         function selectDesk(num, btn) {
             selectedDesk = num;
@@ -118,10 +146,24 @@
             btn.classList.add('active');
         }
 
-        function openFoodModal() { document.getElementById('food-modal').style.display = 'flex'; }
-        
-        function promptQty(name, price) {
-            currentFood = { name, price };
+        function openCat(catName) {
+            const list = document.getElementById('food-list');
+            document.getElementById('cat-title').innerText = catName;
+            list.innerHTML = '';
+            
+            menuData[catName].forEach(food => {
+                list.innerHTML += `
+                    <div class="food-item" onclick="openQty('${food.name}', ${food.price})">
+                        <span>${food.name}</span>
+                        <span style="color:var(--gold)">${food.price.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('cat-modal').style.display = 'flex';
+        }
+
+        function openQty(name, price) {
+            currentItem = { name, price };
             document.getElementById('modal-food-name').innerText = name;
             document.getElementById('qty-input').value = 1;
             document.getElementById('extra-input').value = "";
@@ -133,64 +175,66 @@
             const extra = document.getElementById('extra-input').value;
             
             cart.push({
-                name: currentFood.name,
-                price: currentFood.price,
+                name: currentItem.name,
+                price: currentItem.price,
                 qty: qty,
                 extra: extra,
-                total: currentFood.price * qty
+                total: currentItem.price * qty
             });
             
             closeModal('qty-modal');
-            closeModal('food-modal');
-            updateUI();
+            closeModal('cat-modal');
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('selected-list');
+            const totalEl = document.getElementById('display-total');
+            list.innerHTML = '';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                total += item.total;
+                list.innerHTML += `
+                    <div class="item-row">
+                        <div>
+                            <b>${item.qty}x ${item.name}</b>
+                            ${item.extra ? `<small style="display:block; color:#888;">+ ${item.extra}</small>` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span>${item.total.toLocaleString()}</span>
+                            <button class="del-btn" onclick="removeItem(${index})">×</button>
+                        </div>
+                    </div>
+                `;
+            });
+            totalEl.innerText = total.toLocaleString() + " د.ع";
         }
 
         function removeItem(index) {
             cart.splice(index, 1);
-            updateUI();
-        }
-
-        function updateUI() {
-            const list = document.getElementById('selected-list');
-            const totalDisplay = document.getElementById('display-total');
-            list.innerHTML = '';
-            let grandTotal = 0;
-
-            cart.forEach((item, index) => {
-                grandTotal += item.total;
-                list.innerHTML += `
-                    <div class="item-row">
-                        <div class="item-info">
-                            <b>${item.qty}x ${item.name}</b>
-                            ${item.extra ? `<small>+ ${item.extra}</small>` : ''}
-                        </div>
-                        <span style="margin-left:10px;">${item.total.toLocaleString()}</span>
-                        <button class="del-btn" onclick="removeItem(${index})">×</button>
-                    </div>
-                `;
-            });
-            totalDisplay.innerText = grandTotal.toLocaleString() + " د.ع";
+            updateCartUI();
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function sendOrder() {
-            if (!selectedDesk) return alert("مێز هەڵبژێرە!");
-            if (cart.length === 0) return alert("خواردن هەڵبژێرە!");
+            if (!selectedDesk) return alert("تکایە مێزێک هەڵبژێرە!");
+            if (cart.length === 0) return alert("هیچ خواردنێک هەڵنەبژێردراوە!");
 
-            const itemsStr = cart.map(i => `${i.qty}x ${i.name}${i.extra ? '('+i.extra+')' : ''}`).join(' + ');
-            const finalTotal = cart.reduce((sum, i) => sum + i.total, 0);
+            const itemsSummary = cart.map(i => `${i.qty}x ${i.name}${i.extra ? ' ('+i.extra+')' : ''}`).join(' + ');
+            const finalTotal = cart.reduce((s, i) => s + i.total, 0);
 
             const orderData = {
                 id: Math.floor(1000 + Math.random() * 9000),
-                items: itemsStr,
+                items: itemsSummary,
                 total: finalTotal.toLocaleString() + " د.ع",
                 phone: "ناوەوە (مێزی " + selectedDesk + ")",
                 time: new Date().toLocaleString('en-CA', { hour12: false }).replace(',', '')
             };
 
             db.ref('orders').push(orderData).then(() => {
-                alert("نێردرا!");
+                alert("داواکارییەکە بە سەرکەوتوویی نێردرا!");
                 location.reload();
             });
         }

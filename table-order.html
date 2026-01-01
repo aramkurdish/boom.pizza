@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ناوەوەی چێشتخانە - بوم پیتزا</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        :root { --accent: #ff3131; --bg: #0a0b0d; --card: #16181d; }
+        body { font-family: 'Vazirmatn', sans-serif; background: var(--bg); color: white; padding: 15px; text-align: center; }
+        .table-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .table-btn { 
+            background: #1f2229; border: 2px solid #333; color: white; padding: 15px 5px; 
+            border-radius: 12px; cursor: pointer; font-weight: bold; 
+        }
+        .table-btn.active { background: var(--accent); border-color: white; }
+        .order-box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #25282e; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; font-family: inherit; }
+        .btn-send { background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+    <h2>🍽️ داواکاری مێزەکان</h2>
+    
+    <div class="table-grid">
+        <button class="table-btn" onclick="selectDesk(1, this)">Desk 1</button>
+        <button class="table-btn" onclick="selectDesk(2, this)">Desk 2</button>
+        <button class="table-btn" onclick="selectDesk(3, this)">Desk 3</button>
+        <button class="table-btn" onclick="selectDesk(4, this)">Desk 4</button>
+        <button class="table-btn" onclick="selectDesk(5, this)">Desk 5</button>
+        <button class="table-btn" onclick="selectDesk(6, this)">Desk 6</button>
+    </div>
+
+    <div class="order-box">
+        <input type="text" id="items" placeholder="ناوی خواردنەکان (بۆ نموونە: ٢ پیتزا)">
+        <input type="number" id="total" placeholder="کۆی گشتی (دینار)">
+        <textarea id="note" placeholder="تێبینی..." style="width:100%; height:80px; border-radius:10px; padding:10px;"></textarea>
+        <button class="btn-send" onclick="sendOrder()">ناردنی داواکاری ✅</button>
+    </div>
+
+    <script>
+        // هەمان Firebase Config ی خۆت لێرە دابنێ
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqoOjm4m1Fxp760mJPy0sv5_NjaJfkm7g",
+            databaseURL: "https://boompizza-5d048-default-rtdb.firebaseio.com",
+            projectId: "boompizza-5d048",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let selectedDesk = null;
+
+        function selectDesk(num, btn) {
+            selectedDesk = num;
+            document.querySelectorAll('.table-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function sendOrder() {
+            const items = document.getElementById('items').value;
+            const total = document.getElementById('total').value;
+            const note = document.getElementById('note').value || "نییە";
+
+            if (!selectedDesk) return alert("تکایە سەرەتا مێزێک هەڵبژێرە!");
+            if (!items || !total) return alert("تکایە هەموو خانەکان پڕ بکەرەوە!");
+
+            const orderData = {
+                id: Math.floor(1000 + Math.random() * 9000),
+                items: items,
+                total: total + " د.ع",
+                phone: "ناوەوە (Desk " + selectedDesk + ")", // لێرە دیاری دەکات کام مێزەیە
+                time: new Date().toLocaleString('en-CA'),
+                note: note,
+                type: "inside" // نیشانەیەک کە ئەمە داواکاری ناوەوەیە
+            };
+
+            db.ref('orders').push(orderData).then(() => {
+                alert("داواکارییەکە نێردرا بۆ مێزی " + selectedDesk);
+                location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

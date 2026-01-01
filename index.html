@@ -14,7 +14,7 @@
         .contact-item { display: flex; align-items: center; gap: 5px; background: #222; color: white; padding: 7px 15px; border-radius: 50px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
         .share-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; margin: 15px auto; font-family: 'Vazirmatn'; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
         
-        /* ستایلی چەرخەکە */
+        /* Wheel Style */
         .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .wheel-wrap { position: relative; width: 300px; height: 300px; margin-bottom: 20px; }
         .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid var(--primary-red); z-index: 20; }
@@ -63,7 +63,7 @@
         <div class="wheel-pointer"></div>
         <div id="theWheel" class="main-wheel">
             <svg viewBox="0 0 200 200" style="width: 100%; height: 100%;">
-                <g id="wheelSlices">
+                <g>
                     <path d="M100,100 L100,0 A100,100 0 0,1 186.6,50 Z" fill="#ffffff" />
                     <path d="M100,100 L186.6,50 A100,100 0 0,1 186.6,150 Z" fill="#ff3131" />
                     <path d="M100,100 L186.6,150 A100,100 0 0,1 100,200 Z" fill="#ffc107" />
@@ -133,10 +133,10 @@
         isSpinning = true;
         const wheel = document.getElementById('theWheel');
         const status = document.getElementById('wheelStatus');
-        
         const randomVal = Math.random() * 1000;
         let targetIdx;
-        if (randomVal <= 2) targetIdx = 1; 
+
+        if (randomVal <= 2) targetIdx = 1; // 0.2% chance for 90%
         else {
             const fails = [0, 2, 3, 4, 5];
             targetIdx = fails[Math.floor(Math.random() * fails.length)];
@@ -144,7 +144,6 @@
 
         const prizes = ["بەختێکی تر 🍀", "داشکاندنی ٩٠٪ 🔥", "١٠٠٠ دینار داشکاندن 💰", "سۆسی خۆڕایی 🍯", "بەختێکی تر 🍀", "هەوڵ بدەرەوە ✨"];
         const deg = (targetIdx * 60) + 2160 + 30; 
-        
         wheel.style.transform = `rotate(-${deg}deg)`;
         status.innerText = "خەریکە دەوەستێت... ✨";
 
@@ -199,30 +198,38 @@
 
     function sendToWhatsApp() {
         if(cart.length === 0) return alert("سەبەتەکە بەتاڵە!");
-        
         const btn = document.getElementById('sendBtn');
-        btn.innerText = "📍 دۆزینەوەی لۆکەیشن...";
+        btn.innerText = "📍 لۆکەیشن...";
         btn.disabled = true;
 
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const mapLink = `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`;
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const mapLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
                 processOrder(mapLink);
-            }, function() { processOrder("لۆکەیشن دیاری نەکراوە"); }, { timeout: 8000 });
+            }, function() { processOrder("نەتوانرا لۆکەیشن دیاری بکرێت"); }, { timeout: 8000 });
         } else { processOrder("پشتگیری لۆکەیشن ناکات"); }
     }
 
     function processOrder(locationInfo) {
+        const orderID = Math.floor(1000 + Math.random() * 9000);
         const note = document.getElementById('order-note').value || "تێبینی نییە";
-        let txt = "📦 *داواکاری نوێ:*\n\n";
-        txt += `📍 *لۆکەیشن:* ${locationInfo}\n📝 *تێبینی:* ${note}\n\n🍴 *خواردنەکان:*\n`;
+        
+        let txt = `🆔 *داواکاری نوێ: #${orderID}*\n`;
+        txt += "----------------------------\n";
+        txt += `📍 *لۆکەیشن:* ${locationInfo}\n`;
+        txt += `📝 *تێبینی:* ${note}\n\n`;
+        txt += "🍴 *خواردنەکان:*\n";
+        
         const grouped = {};
         cart.forEach(i => grouped[i.name] = (grouped[i.name] || 0) + 1);
         for (const [n, c] of Object.entries(grouped)) txt += `🔹 ${c}x ${n}\n`;
+        
         txt += `\n💰 *کۆی گشتی:* ${document.getElementById('total-amount').innerText} دینار`;
         
+        alert("پیرۆزە! داواکارییەکەت تۆمارکرا.\nژمارەی داواکاری: #" + orderID);
         document.getElementById('sendBtn').innerText = "ناردنی داواکاری (WhatsApp)";
         document.getElementById('sendBtn').disabled = false;
+        
         window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(txt)}`;
     }
 

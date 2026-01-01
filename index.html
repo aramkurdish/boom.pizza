@@ -21,8 +21,7 @@
         header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
 
         .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; display: none; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
+        
         .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; justify-content: center; align-items: center; }
         .wheel-content { position: relative; text-align: center; }
         #luckyWheel { border-radius: 50%; border: 8px solid #333; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); width: 320px; height: 320px; }
@@ -42,11 +41,16 @@
         .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; margin: 10px; cursor: pointer; font-family: 'Vazirmatn'; }
 
         #cart-section { background: #111; border-radius: 20px; padding: 20px; margin: 20px 15px 100px; border: 1px solid #333; }
+        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
+        .remove-cart-btn { background: none; border: 1px solid #555; color: #888; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 0.8rem; }
+        .remove-cart-btn:hover { color: #ff3131; border-color: #ff3131; }
+
         .order-input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-family: 'Vazirmatn'; box-sizing: border-box; }
         .whatsapp-btn { background: var(--whatsapp-green); color: white; padding: 16px; border-radius: 50px; width: 100%; border: none; font-weight: bold; cursor: pointer; font-family: 'Vazirmatn'; margin-top: 15px; }
 
         .page { display: none; }
         .page.active { display: block; }
+        .admin-item-row { background:#222; padding:15px; margin-bottom:10px; border-radius:10px; }
     </style>
 </head>
 <body>
@@ -89,10 +93,10 @@
 
 <div id="edit-site" class="page" style="padding:20px;">
     <div style="background:#111; padding:20px; border-radius:20px; border:1px solid #333;">
-        <h3>➕ زیادکردنی خواردن</h3>
+        <h3 id="form-title">➕ زیادکردنی خواردن</h3>
+        <input type="hidden" id="edit-key">
         <input type="text" id="adm-name" class="order-input" placeholder="ناوی خواردن">
         <input type="number" id="adm-price" class="order-input" placeholder="نرخ">
-        <input type="number" id="adm-disc" class="order-input" placeholder="داشکان">
         <input type="text" id="adm-img" class="order-input" placeholder="لێنکی وێنە">
         <select id="adm-cat" class="order-input">
             <option value="pizza">پیتزا</option>
@@ -100,7 +104,7 @@
             <option value="shawarma">شاوەرمە</option>
             <option value="drink">خواردنەوە</option>
         </select>
-        <button class="add-btn" style="width:100%; margin-top:20px; background:var(--whatsapp-green);" onclick="uploadItem()">پاشەکەوتکردن</button>
+        <button class="add-btn" id="save-btn" style="width:100%; margin-top:20px; background:var(--whatsapp-green);" onclick="uploadItem()">پاشەکەوتکردن</button>
     </div>
     <div id="admin-items-list" style="margin-top:20px;"></div>
 </div>
@@ -143,14 +147,13 @@
 
     function drawWheel() {
         const arc = (2 * Math.PI) / prizes.length;
-        prizes.forEach((prize, i) => {
-            const angle = i * arc;
-            ctx.beginPath(); ctx.fillStyle = prize.color;
-            ctx.moveTo(175, 175); ctx.arc(175, 175, 175, angle, angle + arc);
+        prizes.forEach((p, i) => {
+            ctx.beginPath(); ctx.fillStyle = p.color;
+            ctx.moveTo(175, 175); ctx.arc(175, 175, 175, i * arc, (i+1) * arc);
             ctx.fill(); ctx.save();
-            ctx.translate(175, 175); ctx.rotate(angle + arc / 2);
+            ctx.translate(175, 175); ctx.rotate(i * arc + arc/2);
             ctx.textAlign = "right"; ctx.fillStyle = "white";
-            ctx.font = "bold 14px Vazirmatn"; ctx.fillText(prize.label, 150, 10);
+            ctx.font = "bold 12px Vazirmatn"; ctx.fillText(p.label, 150, 10);
             ctx.restore();
         });
     }
@@ -163,29 +166,35 @@
     function spinWheel() {
         if (window.isSpinning || localStorage.getItem('canSpinBoom') !== 'true') return;
         window.isSpinning = true;
-        const randomNum = Math.random() * 100;
-        let cumulativeProb = 0;
-        let prizeIndex = 0;
+        const rand = Math.random() * 100;
+        let cumulative = 0, idx = 0;
         for (let i = 0; i < prizes.length; i++) {
-            cumulativeProb += prizes[i].prob;
-            if (randomNum <= cumulativeProb) { prizeIndex = i; break; }
+            cumulative += prizes[i].prob;
+            if (rand <= cumulative) { idx = i; break; }
         }
-        const segmentDegree = 360 / prizes.length;
-        const centerOfSegment = (prizeIndex * segmentDegree) + (segmentDegree / 2);
-        const rotationToTarget = 270 - centerOfSegment;
-        currentRotation += (10 * 360) + rotationToTarget - (currentRotation % 360);
+        const deg = 360 / prizes.length;
+        const target = 270 - (idx * deg + deg/2);
+        currentRotation += (10 * 360) + target - (currentRotation % 360);
         canvas.style.transform = `rotate(${currentRotation}deg)`;
         setTimeout(() => { 
             window.isSpinning = false;
             localStorage.setItem('canSpinBoom', 'false');
-            alert("پیرۆزە! " + prizes[prizeIndex].label);
+            alert("پیرۆزە! " + prizes[idx].label);
             setTimeout(() => { toggleWheel(false); checkSpinAccess(); }, 1000);
         }, 5000);
     }
 
     function addToCart(name, price) {
         if (cart[name]) cart[name].qty++;
-        else cart[name] = { price: price, qty: 1 };
+        else cart[name] = { price, qty: 1 };
+        updateCartUI();
+    }
+
+    function removeFromCart(name) {
+        if (cart[name]) {
+            if (cart[name].qty > 1) cart[name].qty--;
+            else delete cart[name];
+        }
         updateCartUI();
     }
 
@@ -196,7 +205,10 @@
         for (const name in cart) {
             const item = cart[name];
             total += item.price * item.qty;
-            list.innerHTML += `<div>${item.qty}x ${name} - ${(item.price * item.qty).toLocaleString()}</div>`;
+            list.innerHTML += `<div class="cart-item-row">
+                <span>${item.qty}x ${name} - ${(item.price * item.qty).toLocaleString()}</span>
+                <button class="remove-cart-btn" onclick="removeFromCart('${name}')">لابردن ✖</button>
+            </div>`;
         }
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
@@ -204,12 +216,10 @@
     function getLocationAndSend() {
         if(Object.keys(cart).length === 0) return alert("سەبەتە بەتاڵە!");
         const btn = document.getElementById('sendBtn');
-        btn.innerText = "⏳ وەرگرتنی لۆکەیشن..."; btn.disabled = true;
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                processOrder(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
-            }, () => { processOrder("دیاری نەکراوە"); }, { enableHighAccuracy: true });
-        } else processOrder("پشتگیری ناکرێت");
+        btn.innerText = "⏳ لۆکەیشن..."; btn.disabled = true;
+        navigator.geolocation.getCurrentPosition((pos) => {
+            processOrder(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
+        }, () => processOrder("دیاری نەکراوە"), {enableHighAccuracy:true});
     }
 
     function processOrder(mapUrl) {
@@ -233,7 +243,7 @@
             display.innerHTML = '';
             snap.forEach(child => {
                 const item = child.val();
-                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price.toLocaleString()}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زیادکردن +</button></div>`;
+                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price.toLocaleString()}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زيادکردن +</button></div>`;
             });
         });
     }
@@ -241,48 +251,75 @@
     function fetchAdminList() {
         db.ref('menu_items').on('value', snap => {
             const list = document.getElementById('admin-items-list');
-            list.innerHTML = '<h3>📦 بەڕێوەبردنی خواردنەکان</h3>';
+            list.innerHTML = '<h3>📦 بەڕێوەبردن</h3>';
             snap.forEach(child => {
                 const item = child.val();
-                list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;"><span>${item.name} (${item.price})</span><button onclick="deleteItem('${child.key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">سڕینەوە</button></div>`;
+                list.innerHTML += `<div class="admin-item-row">
+                    <b>${item.name}</b> (${item.price})
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <button onclick="editItem('${child.key}', '${item.name}', ${item.price}, '${item.img}', '${item.category}')" style="flex:1; background:orange; color:white; border:none; padding:5px; border-radius:5px;">Edit</button>
+                        <button onclick="deleteItem('${child.key}')" style="flex:1; background:red; color:white; border:none; padding:5px; border-radius:5px;">Delete</button>
+                    </div>
+                </div>`;
             });
         });
     }
 
-    function deleteItem(key) { if(confirm("بڕیاری؟")) db.ref('menu_items').child(key).remove(); }
-
     function uploadItem() {
-        const name = document.getElementById('adm-name').value, price = parseInt(document.getElementById('adm-price').value), disc = document.getElementById('adm-disc').value, img = document.getElementById('adm-img').value, cat = document.getElementById('adm-cat').value;
-        if(name && price) db.ref('menu_items').push({name, price, discount: disc?parseInt(disc):null, img: img||'https://via.placeholder.com/150', category: cat}).then(()=>alert("زیاد کرا"));
+        const key = document.getElementById('edit-key').value;
+        const data = { name: document.getElementById('adm-name').value, price: parseInt(document.getElementById('adm-price').value), img: document.getElementById('adm-img').value || 'https://via.placeholder.com/150', category: document.getElementById('adm-cat').value };
+        if(key) db.ref('menu_items').child(key).update(data);
+        else db.ref('menu_items').push(data);
+        resetForm();
     }
 
+    function editItem(key, name, price, img, cat) {
+        document.getElementById('edit-key').value = key;
+        document.getElementById('adm-name').value = name;
+        document.getElementById('adm-price').value = price;
+        document.getElementById('adm-img').value = img;
+        document.getElementById('adm-cat').value = cat;
+        document.getElementById('form-title').innerText = "✏️ دەستکاری";
+        window.scrollTo(0,0);
+    }
+
+    function resetForm() {
+        document.getElementById('edit-key').value = '';
+        document.getElementById('adm-name').value = '';
+        document.getElementById('adm-price').value = '';
+        document.getElementById('form-title').innerText = "➕ زیادکردن";
+    }
+
+    function deleteItem(key) { if(confirm("سڕینەوە؟")) db.ref('menu_items').child(key).remove(); }
+
+    function fetchOrders() {
+        db.ref('orders').on('value', snap => {
+            const div = document.getElementById('firebase-orders');
+            div.innerHTML = '<h3>📥 داواکارییەکان</h3>';
+            snap.forEach(child => {
+                const o = child.val();
+                div.innerHTML += `<div style="background:#111; padding:15px; border:1px solid #333; border-radius:15px; margin-bottom:10px;">
+                    <p>🆔 #${o.orderID}</p><p>🍴 ${o.items}</p><p>💰 ${o.total}</p>
+                    <button onclick="deleteOrder('${child.key}')" style="width:100%; background:#444; color:white; border:none; padding:8px; border-radius:5px;">Archive (Cancel/Done)</button>
+                </div>`;
+            });
+        });
+    }
+
+    function deleteOrder(key) { if(confirm("بسڕێتەوە؟")) db.ref('orders').child(key).remove(); }
+
     function handleAdminAccess(id, btn) {
-        if(prompt("پاسوۆرد:") === "1998a") {
+        if(prompt("Password:") === "1998a") {
             switchPage(id, btn);
             if(id === 'orders-site') fetchOrders();
             if(id === 'edit-site') fetchAdminList();
-        } else alert("هەڵەیە!");
+        } else alert("Error!");
     }
 
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        if(btn) btn.classList.add('active');
     }
-
-    function fetchOrders() {
-        db.ref('orders').on('value', snap => {
-            const div = document.getElementById('firebase-orders');
-            div.innerHTML = '<h3>📥 داواکارییە نوێیەکان</h3>';
-            snap.forEach(child => {
-                const o = child.val();
-                div.innerHTML += `<div style="background:#111; padding:15px; border:1px solid #333; border-radius:15px; margin-bottom:10px;"><p>🆔 #${o.orderID}</p><p>🍴 ${o.items}</p><p>💰 ${o.total}</p><p>📍 <a href="${o.location}" style="color:cyan;">بینینی شوێن</a></p><p>📝 ${o.note}</p><button onclick="deleteOrder('${child.key}')" style="background:gray; border:none; color:white; padding:5px; border-radius:5px;">Archive</button></div>`;
-            });
-        });
-    }
-
-    function deleteOrder(key) { db.ref('orders').child(key).remove(); }
 
     window.onload = () => { loadFirebaseMenu('pizza', document.querySelector('.cat-card')); checkSpinAccess(); };
 </script>

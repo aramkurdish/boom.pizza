@@ -42,6 +42,13 @@
         .lucky-wheel-canvas {
             filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
         }
+        .receipt-pattern {
+            background-color: #ffffff;
+            background-image:  linear-gradient(135deg, #f5f5f5 25%, transparent 25%), linear-gradient(225deg, #f5f5f5 25%, transparent 25%), linear-gradient(45deg, #f5f5f5 25%, transparent 25%), linear-gradient(315deg, #f5f5f5 25%, #ffffff 25%);
+            background-position:  10px 0, 10px 0, 0 0, 0 0;
+            background-size:  20px 20px;
+            background-repeat: repeat;
+        }
     </style>
     <script type="importmap">
     {
@@ -90,7 +97,60 @@
             return LucideIcon ? html`<${LucideIcon} ...${props} />` : null;
         };
 
-        // --- Components ---
+        // --- Digital Receipt Component ---
+        const DigitalReceipt = ({ order, onClose }) => {
+            return html`
+                <div className="fixed inset-0 z-[7000] bg-black/95 flex items-center justify-center p-4">
+                    <div className="bg-white text-black w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center p-6 relative">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-[#ff3131]"></div>
+                        
+                        <div className="bg-green-100 text-green-600 p-3 rounded-full mb-4">
+                            <${Icon} name="CheckCircle" size=${32} />
+                        </div>
+                        
+                        <h2 className="text-2xl font-black mb-1">وەسڵی دیجیتاڵی</h2>
+                        <p className="text-gray-500 text-sm mb-6">سوپاس بۆ متمانەکەت!</p>
+                        
+                        <div className="w-full border-t border-dashed border-gray-300 py-4 space-y-3">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">کۆدی داواکاری:</span>
+                                <span className="font-bold">#${order.orderID}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">کات:</span>
+                                <span className="font-bold">${order.time}</span>
+                            </div>
+                            <div className="flex flex-col gap-1 mt-2">
+                                <span className="text-gray-500 text-sm">داواکارییەکان:</span>
+                                <span className="font-bold text-sm bg-gray-50 p-2 rounded-lg">${order.items}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-4">
+                                <span className="text-lg font-bold">کۆی گشتی:</span>
+                                <span className="text-2xl font-black text-[#ff3131]">${order.total} د.ع</span>
+                            </div>
+                        </div>
+
+                        <div className="w-full mt-6 space-y-3">
+                            <button 
+                                onClick=${() => {
+                                    const msg = `🆔 # ${order.orderID}\n🍴 ${order.items}\n💰 ${order.total} د.ع\n📍 ${order.location}\n📝 ${order.note || "بەبێ تێبینی"}`;
+                                    window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(msg)}`;
+                                }}
+                                className="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <${Icon} name="MessageCircle" size=${18} /> ناردنی کۆتایی بۆ واتسئەپ
+                            </button>
+                            <button 
+                                onClick=${onClose}
+                                className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl"
+                            >
+                                گەڕانەوە بۆ مێنۆ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
 
         const LuckyWheel = ({ onWin, onClose }) => {
             const [isSpinning, setIsSpinning] = useState(false);
@@ -311,6 +371,7 @@
             const [prizes, setPrizes] = useState([]);
             const [orderNote, setOrderNote] = useState('');
             const [isSending, setIsSending] = useState(false);
+            const [lastOrder, setLastOrder] = useState(null);
 
             const CATEGORIES = useMemo(() => [
                 { id: 'pizza', name: 'پیتزا', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150' },
@@ -358,21 +419,43 @@
             const handleSendOrder = async () => {
                 if (Object.keys(cart).length === 0) return alert("سەبەتەکەت بەتاڵە!");
                 setIsSending(true);
+
+                // Geolocation is MANDATORY now
                 const pos = await new Promise(resolve => navigator.geolocation.getCurrentPosition(
                     p => resolve(`https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`),
-                    () => resolve("دیاری نەکراوە"), { timeout: 5000, enableHighAccuracy: true }
+                    () => resolve(null), 
+                    { timeout: 8000, enableHighAccuracy: true }
                 ));
+
+                if (!pos) {
+                    alert("تکایە لۆکەیشنەکەت چالاک بکە! داواکاری بەبێ لۆکەیشن نانێردرێت.");
+                    setIsSending(false);
+                    return;
+                }
+
                 const orderID = Math.floor(1000 + Math.random() * 9000);
                 const itemsStr = Object.values(cart).map(i => `${i.qty}x ${i.name}`).join(", ");
                 const prizeStr = prizes.length > 0 ? ` | 🎁 خەڵات: ${prizes.join(", ")}` : "";
-                const orderData = { orderID, items: itemsStr + prizeStr, total: totalAmount.toLocaleString(), location: pos, note: orderNote, time: new Date().toLocaleString('ku-IQ') };
+                const orderData = { 
+                    orderID, 
+                    items: itemsStr + prizeStr, 
+                    total: totalAmount.toLocaleString(), 
+                    location: pos, 
+                    note: orderNote, 
+                    time: new Date().toLocaleString('ku-IQ') 
+                };
 
                 try {
                     await set(ref(db, `orders/${orderID}`), orderData);
                     localStorage.setItem('canSpinBoom', 'true');
-                    const msg = `🆔 # ${orderID}\n🍴 ${itemsStr}${prizeStr}\n💰 ${totalAmount.toLocaleString()} د.ع\n📍 ${pos}\n📝 ${orderNote || "بەبێ تێبینی"}`;
-                    window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(msg)}`;
-                } catch { alert("هەڵە ڕوویدا لە ناردنی داواکاری"); setIsSending(false); }
+                    setLastOrder(orderData); // Trigger Digital Receipt Modal
+                    setCart({}); // Clear cart
+                    setOrderNote('');
+                    setIsSending(false);
+                } catch { 
+                    alert("هەڵە ڕوویدا لە پاشەکەوتکردنی داواکاری"); 
+                    setIsSending(false); 
+                }
             };
 
             return html`
@@ -446,7 +529,7 @@
                             ${Object.keys(cart).length > 0 && html`
                                 <div className="p-4 mx-4 mb-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
                                     <h3 className="text-[#ffc107] font-bold flex items-center gap-2 mb-4">
-                                        <${Icon} name="ShoppingCart" size=${18} /> سەبەتەکەت
+                                        <${Icon} name="ShoppingCart" size=${18} /> سەبەتەکەت (${Object.values(cart).length})
                                     </h3>
                                     ${Object.values(cart).map(item => html`
                                         <div key=${item.name} className="flex justify-between items-center text-sm bg-zinc-800/50 p-3 rounded-xl mb-3 border border-zinc-700">
@@ -487,8 +570,9 @@
                                         disabled=${isSending} 
                                         className=${`w-full bg-[#25D366] hover:bg-green-600 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-green-500/20 transition-all ${isSending ? 'opacity-70 animate-pulse' : ''}`}
                                     >
-                                        ${isSending ? '⏳ لۆکەیشن...' : html`<span className="flex items-center gap-2">✅ ناردنی داواکاری بۆ واتسئەپ</span>`}
+                                        ${isSending ? '⏳ چاوەڕوانی لۆکەیشن...' : html`<span className="flex items-center gap-2">✅ ناردنی داواکاری و بینینی وەسڵ</span>`}
                                     </button>
+                                    <p className="text-zinc-500 text-[10px] text-center mt-3">تکایە دڵنیابە لەوەی لۆکەیشنەکەت چالاکە بۆ ناردنی سەرکەوتووانە.</p>
                                 </div>
                             `}
                         </div>
@@ -503,6 +587,13 @@
                                 setShowWheel(false); 
                             }} 
                             onClose=${() => setShowWheel(false)} 
+                        />
+                    `}
+
+                    ${lastOrder && html`
+                        <${DigitalReceipt} 
+                            order=${lastOrder} 
+                            onClose=${() => setLastOrder(null)} 
                         />
                     `}
                 </div>

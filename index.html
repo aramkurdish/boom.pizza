@@ -20,7 +20,7 @@
         header { background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--dark-bg)), url('https://i.postimg.cc/02R8rCjV/99999999.jpg'); background-size: cover; background-position: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 4px solid var(--primary-red); position: relative; }
         header h1 { font-size: 2.5rem; color: var(--text-gold); text-shadow: 2px 2px 10px #000; margin: 0; }
 
-        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; }
+        .spin-launcher { position: fixed; top: 60px; left: 15px; z-index: 4000; background: var(--text-gold); border: none; border-radius: 50px; padding: 8px 15px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); font-family: 'Vazirmatn'; animation: pulse 2s infinite; display: none; }
         
         .wheel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; display: none; justify-content: center; align-items: center; }
         .wheel-content { position: relative; text-align: center; }
@@ -40,13 +40,14 @@
         
         #cart-section { background: #111; border-radius: 20px; padding: 20px; margin: 20px 15px 100px; border: 1px solid #333; }
         .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
-        .history-item { font-size: 0.8rem; color: var(--text-gold); margin-top: 5px; }
+        .remove-cart-btn { background: none; border: 1px solid #555; color: #ff3131; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-weight: bold; }
+        .history-item { font-size: 0.9rem; color: var(--text-gold); margin-top: 5px; padding: 5px; background: rgba(255,193,7,0.1); border-radius: 5px; }
 
         .page { display: none; }
         .page.active { display: block; }
         .order-input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-family: 'Vazirmatn'; box-sizing: border-box; }
         .whatsapp-btn { background: var(--whatsapp-green); color: white; padding: 16px; border-radius: 50px; width: 100%; border: none; font-weight: bold; cursor: pointer; font-family: 'Vazirmatn'; margin-top: 15px; }
-        .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; margin: 10px; cursor: pointer; }
+        .add-btn { background: var(--primary-red); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; margin: 10px; cursor: pointer; font-family: 'Vazirmatn'; }
     </style>
 </head>
 <body>
@@ -94,7 +95,7 @@
         <input type="hidden" id="edit-key">
         <input type="text" id="adm-name" class="order-input" placeholder="ناوی خواردن">
         <input type="number" id="adm-price" class="order-input" placeholder="نرخ">
-        <input type="number" id="adm-disc" class="order-input" placeholder="داشکان (ئارەزوومەندانە)">
+        <input type="number" id="adm-disc" class="order-input" placeholder="داشکان (دینار)">
         <input type="text" id="adm-img" class="order-input" placeholder="لێنکی وێنە">
         <select id="adm-cat" class="order-input">
             <option value="pizza">پیتزا</option>
@@ -137,15 +138,9 @@
     const ctx = canvas.getContext('2d');
 
     function checkSpinAccess() {
-        // First spin is always allowed, subsequent spins need order
         const spinCount = parseInt(localStorage.getItem('boomSpinCount') || "0");
         const canSpinAfterOrder = localStorage.getItem('canSpinBoom') === 'true';
-        
-        if (spinCount === 0 || canSpinAfterOrder) {
-            document.getElementById('spinLauncherBtn').style.display = 'block';
-        } else {
-            document.getElementById('spinLauncherBtn').style.display = 'none';
-        }
+        document.getElementById('spinLauncherBtn').style.display = (spinCount === 0 || canSpinAfterOrder) ? 'block' : 'none';
     }
 
     function drawWheel() {
@@ -183,17 +178,12 @@
         setTimeout(() => { 
             window.isSpinning = false;
             const prizeLabel = prizes[idx].label;
-            
-            // Logic for spin tracking
             let count = parseInt(localStorage.getItem('boomSpinCount') || "0");
             localStorage.setItem('boomSpinCount', (count + 1).toString());
             localStorage.setItem('canSpinBoom', 'false');
-            
-            // Add prize to history and cart
             spinPrizes.push(prizeLabel);
             updateSpinHistoryUI();
-            
-            alert("پیرۆزە! خەڵاتەکەت: " + prizeLabel);
+            alert("پیرۆزە! " + prizeLabel);
             setTimeout(() => { toggleWheel(false); checkSpinAccess(); }, 1000);
         }, 5000);
     }
@@ -201,9 +191,7 @@
     function updateSpinHistoryUI() {
         const hist = document.getElementById('spin-history');
         hist.innerHTML = '<b>🎁 خەڵاتەکانت:</b>';
-        spinPrizes.forEach(p => {
-            hist.innerHTML += `<div class="history-item">✨ ${p} (زیادکرا بۆ داواکاری)</div>`;
-        });
+        spinPrizes.forEach(p => { hist.innerHTML += `<div class="history-item">✨ ${p}</div>`; });
     }
 
     function addToCart(name, price) {
@@ -226,7 +214,7 @@
             const item = cart[name];
             total += item.price * item.qty;
             list.innerHTML += `<div class="cart-item-row">
-                <span>${item.qty}x ${name}</span>
+                <span>${item.qty}x ${name} - ${(item.price * item.qty).toLocaleString()}</span>
                 <button class="remove-cart-btn" onclick="removeFromCart('${name}')">✖</button>
             </div>`;
         }
@@ -238,7 +226,7 @@
         const btn = document.getElementById('sendBtn');
         btn.innerText = "⏳ لۆکەیشن..."; btn.disabled = true;
         navigator.geolocation.getCurrentPosition((pos) => {
-            processOrder(`https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`);
+            processOrder(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
         }, () => processOrder("دیاری نەکراوە"), {enableHighAccuracy:true});
     }
 
@@ -248,12 +236,10 @@
         const total = document.getElementById('total-amount').innerText;
         let itemsStr = "";
         for (const name in cart) itemsStr += `${cart[name].qty}x ${name}, `;
-        
-        // Add prizes to the order string
-        let prizeStr = spinPrizes.length > 0 ? " | 🎁 Prizes: " + spinPrizes.join(", ") : "";
+        let prizeStr = spinPrizes.length > 0 ? " | 🎁 خەڵات: " + spinPrizes.join(", ") : "";
 
         db.ref('orders/' + orderID).set({ orderID, items: itemsStr + prizeStr, total, location: mapUrl, note, time: new Date().toLocaleString() }).then(() => {
-            localStorage.setItem('canSpinBoom', 'true'); // Allow next spin after order
+            localStorage.setItem('canSpinBoom', 'true');
             window.location.href = `https://wa.me/9647504629237?text=${encodeURIComponent(`🆔 #${orderID}\n🍴 ${itemsStr}${prizeStr}\n💰 ${total}\n📍 ${mapUrl}\n📝 ${note}`)}`;
         });
     }
@@ -278,16 +264,18 @@
             list.innerHTML = '<h3>📦 بەڕێوەبردن</h3>';
             snap.forEach(child => {
                 const item = child.val();
-                list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:10px; display:flex; justify-content:space-between;">
-                    <span>${item.name} (${item.price}) - 📉${item.discount || 0}</span>
+                list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${item.name}</b> (${item.price}) <br><small>📉 داشکان: ${item.discount || 0}</small></span>
                     <div>
-                        <button onclick="editItem('${child.key}', '${item.name}', ${item.price}, ${item.discount||0}, '${item.img}', '${item.category}')" style="background:orange; border:none; color:white; padding:5px; border-radius:5px;">Edit</button>
-                        <button onclick="deleteItem('${child.key}')" style="background:red; border:none; color:white; padding:5px; border-radius:5px;">Delete</button>
+                        <button onclick="editItem('${child.key}', '${item.name}', ${item.price}, ${item.discount||0}, '${item.img}', '${item.category}')" style="background:orange; border:none; color:white; padding:5px 10px; border-radius:5px;">Edit</button>
+                        <button onclick="deleteItem('${child.key}')" style="background:red; border:none; color:white; padding:5px 10px; border-radius:5px;">Delete</button>
                     </div>
                 </div>`;
             });
         });
     }
+
+    function deleteItem(key) { if(confirm("دڵنیای لە سڕینەوە؟")) db.ref('menu_items').child(key).remove(); }
 
     function editItem(key, name, price, disc, img, cat) {
         document.getElementById('edit-key').value = key;
@@ -316,7 +304,15 @@
             display.innerHTML = '';
             snap.forEach(child => {
                 const item = child.val();
-                display.innerHTML += `<div class="item-card"><img src="${item.img}"><div class="item-info"><h3>${item.name}</h3><b>${item.price.toLocaleString()}</b></div><button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">زیادکردن +</button></div>`;
+                const finalPrice = item.price - (item.discount || 0);
+                display.innerHTML += `<div class="item-card">
+                    <img src="${item.img}">
+                    <div class="item-info">
+                        <h3>${item.name}</h3>
+                        ${item.discount > 0 ? `<s style="color:gray; font-size:0.8rem;">${item.price}</s> <b style="color:var(--primary-red);">${finalPrice.toLocaleString()}</b>` : `<b>${item.price.toLocaleString()}</b>`}
+                    </div>
+                    <button class="add-btn" onclick="addToCart('${item.name}', ${finalPrice})">زیادکردن +</button>
+                </div>`;
             });
         });
     }
@@ -332,6 +328,8 @@
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
     }
 
     function fetchOrders() {
@@ -341,8 +339,12 @@
             snap.forEach(child => {
                 const o = child.val();
                 div.innerHTML += `<div style="background:#111; padding:15px; border:1px solid #333; border-radius:15px; margin-bottom:10px;">
-                    <p>🆔 #${o.orderID}</p><p>🍴 ${o.items}</p><p>💰 ${o.total}</p><p>📍 <a href="${o.location}" style="color:cyan;">Google Maps</a></p>
-                    <button onclick="db.ref('orders').child('${child.key}').remove()" style="width:100%; background:gray; color:white; border:none; padding:8px; border-radius:5px;">سڕینەوە</button>
+                    <p>🆔 #${o.orderID} | ⏰ ${o.time}</p>
+                    <p>🍴 ${o.items}</p>
+                    <p>💰 ${o.total} د.ع</p>
+                    <p>📝 تێبینی: ${o.note || "نییە"}</p>
+                    <a href="${o.location}" target="_blank" style="color:cyan; text-decoration:none; display:block; margin:10px 0;">📍 بینینی لۆکەیشن</a>
+                    <button onclick="db.ref('orders').child('${child.key}').remove()" style="width:100%; background:#444; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">سڕینەوە (تەواوبوو)</button>
                 </div>`;
             });
         });

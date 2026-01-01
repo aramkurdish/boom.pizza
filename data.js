@@ -1,0 +1,23 @@
+const menuItems = [
+    { id: 1, name: "پیزای گۆشت small", price: 4500, category: "pizza", img: "https://i.postimg.cc/k5rZvjrz/20251231-232813-0000.jpg" },
+    { id: 2, name: "پیتزا گۆشت medium", price: 5000, category: "pizza", img: "https://i.postimg.cc/k5rZvjrz/20251231-232813-0000.jpg" },
+    { id: 3, name: "پیزای گۆشت large", price: 7000, category: "pizza", img: "https://i.postimg.cc/k5rZvjrz/20251231-232813-0000.jpg" },
+    { id: 4, name: "پیتزا مریشک small", price: 4000, category: "pizza", img: "https://i.postimg.cc/Vv7p9m1R/20251231-232937-0000.jpg" },
+    { id: 5, name: "پیتزا مریشک medium", price: 5000, category: "pizza", img: "https://i.postimg.cc/Vv7p9m1R/20251231-232937-0000.jpg" },
+    { id: 6, name: "پیتزا مریشک large", price: 6000, category: "pizza", img: "https://i.postimg.cc/Vv7p9m1R/20251231-232937-0000.jpg" },
+    { id: 7, name: "پیتزا موشەکەل", price: 4000, category: "pizza", img: "https://i.postimg.cc/wBH2Bn8C/20251231-233709-0000.jpg" },
+    { id: 8, name: "پیتزا پێپەڕۆنی", price: 4000, category: "pizza", img: "https://i.postimg.cc/JzyVqDsk/20251231-232834-0000.jpg" },
+    { id: 9, name: "بووم پیزا (شاهانە)", price: 7000, category: "pizza", img: "https://i.postimg.cc/L69mz8k6/20251231-232908-0000.jpg" },
+    { id: 10, name: "بووم بەرگر", price: 6000, category: "burger", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=500" },
+    { id: 11, name: "چیز بەرگر", price: 3000, category: "burger", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
+    { id: 12, name: "دەبڵ چیز بەرگر", price: 4000, category: "burger", img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500" },
+    { id: 13, name: "بەرگری قارچک", price: 5000, category: "burger", img: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=500" },
+    { id: 14, name: "لەفەی شاوەرمە", price: 1500, category: "shawarma", img: "https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg" },
+    { id: 15, name: "شاوەرمەی ساج", price: 3000, category: "shawarma", img: "https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg" },
+    { id: 16, name: "شاوەرمە بە پەنیر", price: 2000, category: "shawarma", img: "https://i.postimg.cc/Pr91C9Z7/arabic-chicken-shawarma-sandwich-recipe-1747792750.jpg" },
+    { id: 17, name: "فینگەر (پەتاتە)", price: 1500, category: "finger", img: "https://i.postimg.cc/gcKM6zk8/french-fries-300x221.png" },
+    { id: 18, name: "کۆکا کۆلا", price: 500, category: "drink", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500" },
+    { id: 19, name: "ئاوی بچووک", price: 250, category: "drink", img: "https://i.postimg.cc/v8603rhR/images-(2).jpg" },
+    { id: 20, name: "ماستاو", price: 500, category: "drink", img: "https://i.postimg.cc/xTMFTvNz/images.jpg" },
+    { id: 21, name: "فانتا", price: 500, category: "drink", img: "https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=500" }
+];

@@ -1,0 +1,7 @@
+{
+  "name": "Boom's Pizza - بومز پیتزا",
+  "description": "A professional fast-food ordering system for Boom's Pizza in Kurdish (Sorani) with WhatsApp integration and driver tools.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

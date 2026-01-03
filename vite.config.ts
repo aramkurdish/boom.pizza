@@ -1,15 +1,8 @@
-
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: './', // Ensures assets are loaded relative to the index.html path
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: false,
-    minify: 'terser',
-  },
-  server: {
-    port: 3000,
-  },
-});
+  plugins: [react()],
+  // گرنگترین بەش ئەم دێڕەی خوارەوەیە:
+  base: './', 
+})

@@ -52,6 +52,41 @@
         .lucky-wheel-canvas {
             filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
         }
+        /* Segmented Toggle Styles */
+        .size-toggle-container {
+            background: #1a1a1a;
+            padding: 4px;
+            border-radius: 12px;
+            display: flex;
+            position: relative;
+            border: 1px solid #333;
+        }
+        .size-option {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .size-option.active {
+            color: white;
+        }
+        .size-option.inactive {
+            color: #666;
+        }
+        .size-slider {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            width: calc(33.33% - 4px);
+            background: #ff3131;
+            border-radius: 8px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 10px rgba(255, 49, 49, 0.3);
+        }
     </style>
     <script type="importmap">
     {
@@ -445,6 +480,51 @@
             `;
         };
 
+        const MenuItemCard = ({ item, addToCart }) => {
+            const [selectedSize, setSelectedSize] = useState('M');
+
+            const currentPrice = useMemo(() => {
+                let p = item.price;
+                if (item.category === 'pizza') {
+                    if (selectedSize === 'S') p -= 2000;
+                    if (selectedSize === 'L') p += 3000;
+                }
+                return p - (item.discount || 0);
+            }, [item.price, item.discount, item.category, selectedSize]);
+
+            const sliderTransform = selectedSize === 'S' ? 'translateX(100%)' : selectedSize === 'M' ? 'translateX(0%)' : 'translateX(-100%)';
+
+            return html`
+                <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col shadow-lg">
+                    <div className="relative h-32 overflow-hidden">
+                        <img src=${item.img || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
+                        ${item.discount > 0 && html`<span className="absolute top-2 right-2 bg-[#ff3131] text-white text-[10px] px-2 py-1 rounded-full font-bold">داشکان!</span>`}
+                    </div>
+                    <div className="p-3 text-center flex-grow">
+                        <h3 className="font-bold text-sm text-white mb-1 line-clamp-1">${item.name}</h3>
+                        <div className="flex flex-col items-center mb-3">
+                            ${item.discount > 0 ? html`
+                                <span className="text-zinc-500 line-through text-[10px]">${(item.price + (selectedSize === 'L' ? 3000 : selectedSize === 'S' ? -2000 : 0)).toLocaleString()}</span>
+                                <span className="text-[#ff3131] font-bold text-sm">${currentPrice.toLocaleString()} د.ع</span>
+                            ` : html`<span className="text-white font-bold text-sm">${currentPrice.toLocaleString()} د.ع</span>`}
+                        </div>
+
+                        ${item.category === 'pizza' && html`
+                            <div className="size-toggle-container mb-3">
+                                <div className="size-slider" style=${{ transform: sliderTransform }}></div>
+                                <div onClick=${() => setSelectedSize('L')} className=${`size-option ${selectedSize === 'L' ? 'active' : 'inactive'}`}>L</div>
+                                <div onClick=${() => setSelectedSize('M')} className=${`size-option ${selectedSize === 'M' ? 'active' : 'inactive'}`}>M</div>
+                                <div onClick=${() => setSelectedSize('S')} className=${`size-option ${selectedSize === 'S' ? 'active' : 'inactive'}`}>S</div>
+                            </div>
+                        `}
+                    </div>
+                    <button onClick=${() => addToCart(item, item.category === 'pizza' ? selectedSize : null)} className="w-full bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                        <${Icon} name="Plus" size=${14} /> زیادکردن
+                    </button>
+                </div>
+            `;
+        };
+
         const App = () => {
             const [view, setView] = useState('menu');
             const [activeCategory, setActiveCategory] = useState('');
@@ -484,7 +564,7 @@
             const canSpin = localStorage.getItem('canSpinBoom') === 'true' || !localStorage.getItem('boomSpinCount');
 
             const addToCart = (item, size = null) => {
-                let finalPrice = item.price - (item.discount || 0);
+                let finalPrice = item.price;
                 let displayName = item.name;
 
                 if (size) {
@@ -492,17 +572,12 @@
                     if (size === 'L') finalPrice += 3000;
                     displayName = `${item.name} (${size})`;
                 }
+                
+                finalPrice = finalPrice - (item.discount || 0);
 
                 setCart(prev => {
                     const existing = prev[displayName];
-                    return { 
-                        ...prev, 
-                        [displayName]: { 
-                            name: displayName, 
-                            price: finalPrice, 
-                            qty: (existing?.qty || 0) + 1 
-                        } 
-                    };
+                    return { ...prev, [displayName]: { name: displayName, price: finalPrice, qty: (existing?.qty || 0) + 1 } };
                 });
             };
 
@@ -652,37 +727,9 @@
                             <div className="grid grid-cols-2 gap-4 p-4">
                                 ${filteredMenuItems.length === 0 ? html`
                                     <div className="col-span-2 py-10 text-center text-zinc-600 text-sm">هیچ خواردنێک لەم کاتیگۆرییەدا نییە</div>
-                                ` : filteredMenuItems.map(item => {
-                                    const finalPrice = item.price - (item.discount || 0);
-                                    return html`
-                                        <div key=${item.id} className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 flex flex-col shadow-lg">
-                                            <div className="relative h-32 overflow-hidden">
-                                                <img src=${item.img || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
-                                                ${item.discount > 0 && html`<span className="absolute top-2 right-2 bg-[#ff3131] text-white text-[10px] px-2 py-1 rounded-full font-bold">داشکان!</span>`}
-                                            </div>
-                                            <div className="p-3 text-center flex-grow">
-                                                <h3 className="font-bold text-sm text-white mb-1 line-clamp-1">${item.name}</h3>
-                                                <div className="flex flex-col items-center">
-                                                    ${item.discount > 0 ? html`
-                                                        <span className="text-zinc-500 line-through text-[10px]">${item.price.toLocaleString()}</span>
-                                                        <span className="text-[#ff3131] font-bold text-sm">${finalPrice.toLocaleString()} د.ع</span>
-                                                    ` : html`<span className="text-white font-bold text-sm">${item.price.toLocaleString()} د.ع</span>`}
-                                                </div>
-                                            </div>
-                                            ${item.category === 'pizza' ? html`
-                                                <div className="flex w-full border-t border-zinc-800">
-                                                    <button onClick=${() => addToCart(item, 'S')} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 font-bold text-xs border-r border-zinc-700">S</button>
-                                                    <button onClick=${() => addToCart(item, 'M')} className="flex-1 bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs">M</button>
-                                                    <button onClick=${() => addToCart(item, 'L')} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 font-bold text-xs border-l border-zinc-700">L</button>
-                                                </div>
-                                            ` : html`
-                                                <button onClick=${() => addToCart(item)} className="w-full bg-[#ff3131] hover:bg-red-700 text-white py-3 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
-                                                    <${Icon} name="Plus" size=${14} /> زیادکردن
-                                                </button>
-                                            `}
-                                        </div>
-                                    `;
-                                })}
+                                ` : filteredMenuItems.map(item => html`
+                                    <${MenuItemCard} key=${item.id} item=${item} addToCart=${addToCart} />
+                                `)}
                             </div>
 
                             ${Object.keys(cart).length > 0 && html`
@@ -697,7 +744,7 @@
                                             <div className="flex items-center gap-3">
                                                 <button onClick=${() => removeFromCart(item.name)} className="p-1 text-red-500 bg-red-500/10 rounded-md"><${Icon} name="Minus" size=${16} /></button>
                                                 <span className="font-bold text-white">${item.qty}</span>
-                                                <button onClick=${() => addToCart({ name: item.name, price: item.price })} className="p-1 text-green-500 bg-green-500/10 rounded-md"><${Icon} name="Plus" size=${16} /></button>
+                                                <button onClick=${() => addToCart({ name: item.name.split(' (')[0], price: item.price + (item.name.includes('(L)') ? -3000 : item.name.includes('(S)') ? 2000 : 0) }, item.name.includes('(L)') ? 'L' : item.name.includes('(S)') ? 'S' : item.name.includes('(') ? 'M' : null)} className="p-1 text-green-500 bg-green-500/10 rounded-md"><${Icon} name="Plus" size=${16} /></button>
                                             </div>
                                         </div>
                                     `)}

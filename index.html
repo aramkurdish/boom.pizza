@@ -1,124 +1,74 @@
-
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>بومز پیتزا - Boom's Pizza</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3595/3595455.png">
-
-    <!-- Firebase Compat Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700;900&display=swap" rel="stylesheet">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boom's Pizza | بوم پیتزا</title>
     <style>
-      :root {
-        background-color: #000000;
-      }
-      html, body {
-        background-color: #000000 !important;
-        color: #ffffff;
-        margin: 0;
-        padding: 0;
-        font-family: 'Vazirmatn', sans-serif;
-        -webkit-tap-highlight-color: transparent;
-        overscroll-behavior-y: contain;
-        overflow-x: hidden;
-      }
-      .glass {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .neon-shadow {
-        box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
-      }
-      .neon-shadow-strong {
-        box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
-      }
-      .neon-text {
-        text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
-      }
-      /* Loading Spinner Styles */
-      .loader-container {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #000;
-        z-index: 9999;
-      }
-      .pizza-loader {
-        width: 60px;
-        height: 60px;
-        border: 5px solid #1a1a1a;
-        border-top: 5px solid #FF0000;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
-        box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .loading-text {
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        color: #FF0000;
-        font-size: 12px;
-        animation: pulse 1.5s ease-in-out infinite;
-      }
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-      }
-      @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-      }
-      .animate-float {
-        animation: float 4s ease-in-out infinite;
-      }
+        /* لێرەدا ستایلەکە ڕاستەوخۆ دادەنێین بۆ ئەوەی ئەگەر فایلی CSS نەدۆزرایەوە، شاشەکە ڕەش نەبێت */
+        body { background-color: #000; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        header { background: #111; padding: 20px; border-bottom: 3px solid red; color: red; font-size: 24px; font-weight: bold; }
+        .container { padding: 20px; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin: 10px; display: inline-block; width: 250px; }
+        .price { color: #ff0000; font-weight: bold; }
+        .btn { background: red; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+        #loading { color: yellow; margin-top: 50px; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root">
-      <div class="loader-container">
-        <div class="pizza-loader"></div>
-        <div class="loading-text">BOOM'S PIZZA ... بەستنەوە</div>
-      </div>
+<body>
+
+    <header>BOOM'S PIZZA</header>
+
+    <div class="container">
+        <div id="loading">خەریکی هێنانەوەی خواردنەکانە...</div>
+        <div id="food-list"></div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+        // کلیلەکانی خۆت
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPCRiiZqBnQahEjbwNwVVnna8kKh0TPlc",
+            authDomain: "boompizza-a5e08.firebaseapp.com",
+            projectId: "boompizza-a5e08",
+            storageBucket: "boompizza-a5e08.firebasestorage.app",
+            messagingSenderId: "151796640376",
+            appId: "1:151796640376:web:5294f931ed9f4349685b8d",
+            measurementId: "G-KG5BCT8FCE",
+            databaseURL: "https://boompizza-a5e08-default-rtdb.firebaseio.com"
+        };
+
+        // دەستپێکردنی فایەربەیس
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // هێنانەوەی داتا
+        const foodListDiv = document.getElementById('food-list');
+        const loadingDiv = document.getElementById('loading');
+
+        db.ref('menu').on('value', (snapshot) => {
+            loadingDiv.style.display = 'none';
+            foodListDiv.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    foodListDiv.innerHTML += `
+                        <div class="card">
+                            <h3>${data.name}</h3>
+                            <p class="price">${data.price} دینار</p>
+                            <button class="btn">داواکردن</button>
+                        </div>
+                    `;
+                });
+            } else {
+                foodListDiv.innerHTML = '<p>هیچ خواردنێک لە داتابەیس نییە. بڕۆ بۆ بەشی ئەدمین و خواردن زیاد بکە.</p>';
+            }
+        }, (error) => {
+            loadingDiv.innerHTML = "هەڵە هەیە لە پەیوەندی داتابەیس: " + error.message;
         });
-      }
     </script>
-  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

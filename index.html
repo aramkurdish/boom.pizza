@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Boom's Pizza | بوم پیتزا</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#ff3131" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Boom Pizza" />
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/02R8rCjV/99999999.jpg" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Loading Fallback Styles */
+        #loader-container {
+            background-color: #0a0a0a;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        .loader-logo {
+            color: #ffc107;
+            font-weight: 900;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: -2px;
+            animation: pulse 1.5s ease-in-out infinite;
+            text-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(255, 49, 49, 0.1);
+            border-top: 5px solid #ff3131;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loader-text {
+            margin-top: 24px;
+            font-size: 14px;
+            color: #555;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.98); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #ff3131; border-radius: 10px; }
+        
+        .animate-pulse-gold { animation: pulse-gold 2s infinite; }
+        @keyframes pulse-gold {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 193, 7, 0); }
+        }
+        
+        @keyframes cart-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .animate-cart-bounce { animation: cart-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Segmented Toggle Styles */
+        .size-toggle-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 16px;
+            display: flex;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .size-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 900;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .size-option.active { color: white; }
+        .size-option.inactive { color: rgba(255, 255, 255, 0.4); }
+        .size-slider {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            width: calc(33.33% - 4px);
+            background: #ff3131;
+            border-radius: 12px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(255, 49, 49, 0.3);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "vite": "https://esm.sh/vite@^7.3.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root">
+        <!-- Fallback Loading State -->
+        <div id="loader-container">
+            <div class="loader-logo">BOOM'S PIZZA</div>
+            <div class="spinner"></div>
+            <div class="loader-text">Loading High Quality Taste...</div>
+        </div>
+    </div>
+    
+    <!-- Entry point script: use relative path for deployment compatibility -->
+    <script type="module" src="./index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

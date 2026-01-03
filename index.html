@@ -457,6 +457,7 @@
             const [prizesWon, setPrizesWon] = useState([]);
             const [orderNote, setOrderNote] = useState('');
             const [manualAddress, setManualAddress] = useState('');const [lastOrder, setLastOrder] = useState(null);
+            const [lastOrder, setLastOrder] = useState(null);
             const [isSending, setIsSending] = useState(false);
 
             useEffect(() => {
@@ -478,6 +479,27 @@
 
             const filteredMenuItems = useMemo(() => {
                 return allMenuItems.filter(item => item.category === activeCategory);
+            }, [allMenuItems, activeCategory]);
+
+            const addToCart = (item, size = 'M') => {
+                let finalPrice = item.price - (item.discount || 0);
+                if (item.category === 'pizza') {
+                    if (size === 'S') finalPrice -= 2000;
+                    if (size === 'L') finalPrice += 3000;
+                }
+                const cartKey = item.name + "-" + size;
+                setCart(prev => {
+                    const existing = prev[cartKey];
+                    return { 
+                        ...prev, 
+                        [cartKey]: { 
+                            name: item.name + " (" + size + ")", 
+                            price: finalPrice, 
+                            qty: (existing?.qty || 0) + 1 
+                        } 
+                    };
+                });
+            };
             }, [allMenuItems, activeCategory]);
 
             const addToCart = (item, size = 'M') => {
